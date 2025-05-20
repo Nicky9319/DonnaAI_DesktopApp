@@ -3,7 +3,19 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from './resources/icon.png?asset'
 
+import { initDb,
+  getAgentsInfo,
+  addAgentInfo,
+  updateAgentEnvVariable} from './db/db.js';
+
 function createWindow() {
+  initDb()
+  .then(() => { 
+    console.log('Database initialized successfully');
+    addAgentInfo({ id: 1, name: 'Agent 1', env: {} })
+
+  });
+  
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1440,
@@ -45,9 +57,11 @@ app.whenReady().then(() => {
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+
+
+  // app.on('browser-window-created', (_, window) => {
+  //   optimizer.watchWindowShortcuts(window)
+  // })
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
