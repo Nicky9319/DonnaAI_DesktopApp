@@ -22,11 +22,6 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
-    build: {
-      rollupOptions: {
-        input: resolve(__dirname, 'src/renderer/index.html') // Specify the correct path to index.html
-      }
-    },
     resolve: {
       alias: {
         '@renderer': resolve('src')

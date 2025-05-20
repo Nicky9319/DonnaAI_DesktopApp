@@ -2,13 +2,15 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import MainPage from './Views/MainPage/mainPage'
 import AuthPage from './Views/AuthPage/authPage'
 
+
+
 function App() {
   // Example function to determine which route to show
   const isAuthenticated = () => {
     // Replace this with your actual authentication logic
     return false // or true
   }
-g
+
   return (
     <Router>
       <Routes>
