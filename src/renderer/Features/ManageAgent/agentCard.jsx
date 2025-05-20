@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 const AgentCard = ({ agent, onDelete, onToggleStatus, onUpdateEnvVariable }) => {
+    // Use the agent's id to make showConfig unique to this card
     const [showConfig, setShowConfig] = useState(false);
     const [envVariables, setEnvVariables] = useState(agent.envVariables || {});
     
@@ -17,6 +18,12 @@ const AgentCard = ({ agent, onDelete, onToggleStatus, onUpdateEnvVariable }) => 
                 return {
                     bgColor: '#FBBF24',
                     text: 'Loading...',
+                    dotClass: 'animate-ping'
+                };
+            case 'Deleting':
+                return {
+                    bgColor: '#F87171',
+                    text: 'Deleting...',
                     dotClass: 'animate-ping'
                 };
             default: // Stopped
@@ -37,17 +44,22 @@ const AgentCard = ({ agent, onDelete, onToggleStatus, onUpdateEnvVariable }) => 
         onUpdateEnvVariable(agent.id, key, value);
     };
     
+    // Determine if agent is in any loading state
+    const isLoading = agent.status === 'Loading' || agent.status === 'Deleting';
+    
     return (
         <div
             className="rounded-lg shadow-lg overflow-hidden transition-all duration-300"
-            style={{ backgroundColor: '#1D1F24' }}
+            style={{ 
+                backgroundColor: '#1D1F24',
+                opacity: agent.status === 'Deleting' ? 0.7 : 1
+            }}
         >
             {/* Card Header */}
             <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-center mb-4">
                     <div>
                         <h3 className="text-xl font-semibold" style={{ color: '#F9FAFB' }}>{agent.name}</h3>
-                        <p style={{ color: '#9CA3AF' }} className="text-sm mt-1">Type: {agent.type}</p>
                     </div>
                     <div className="flex items-center px-3 py-1 rounded-full" 
                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
@@ -66,11 +78,11 @@ const AgentCard = ({ agent, onDelete, onToggleStatus, onUpdateEnvVariable }) => 
                         style={{ 
                             backgroundColor: agent.status === 'Running' ? '#F87171' : '#22C55E', 
                             color: '#F9FAFB',
-                            opacity: agent.status === 'Loading' ? 0.7 : 1,
-                            cursor: agent.status === 'Loading' ? 'not-allowed' : 'pointer'
+                            opacity: isLoading ? 0.7 : 1,
+                            cursor: isLoading ? 'not-allowed' : 'pointer'
                         }}
-                        onClick={() => agent.status !== 'Loading' && onToggleStatus(agent.id)}
-                        disabled={agent.status === 'Loading'}
+                        onClick={() => !isLoading && onToggleStatus(agent.id)}
+                        disabled={isLoading}
                     >
                         {agent.status === 'Loading' ? (
                             <>
@@ -86,25 +98,42 @@ const AgentCard = ({ agent, onDelete, onToggleStatus, onUpdateEnvVariable }) => 
                         className="px-3 py-2 rounded-md text-sm font-medium flex-1 transition-colors"
                         style={{ 
                             backgroundColor: showConfig ? '#6366F1' : '#0EA5E9', 
-                            color: '#F9FAFB' 
+                            color: '#F9FAFB',
+                            opacity: isLoading ? 0.7 : 1,
+                            cursor: isLoading ? 'not-allowed' : 'pointer'
                         }}
-                        onClick={() => setShowConfig(!showConfig)}
+                        onClick={() => !isLoading && setShowConfig(!showConfig)}
+                        disabled={isLoading}
                     >
                         {showConfig ? 'Hide Config' : 'Configure'}
                     </button>
                     <button
-                        className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                        style={{ backgroundColor: '#252830', color: '#9CA3AF', border: '1px solid #2A2D35' }}
-                        onClick={() => onDelete(agent.id)}
+                        className="px-3 py-2 rounded-md text-sm font-medium transition-colors flex justify-center items-center"
+                        style={{ 
+                            backgroundColor: '#252830', 
+                            color: '#9CA3AF', 
+                            border: '1px solid #2A2D35',
+                            opacity: isLoading ? 0.7 : 1,
+                            cursor: isLoading ? 'not-allowed' : 'pointer'
+                        }}
+                        onClick={() => !isLoading && onDelete(agent.id)}
+                        disabled={isLoading}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        {agent.status === 'Deleting' ? (
+                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        )}
                     </button>
                 </div>
             </div>
             
-            {/* Configuration Panel (Dropdown) */}
+            {/* Configuration Panel (Dropdown) - Only render for this specific agent */}
             {showConfig && (
                 <div className="px-6 py-4 border-t transition-all duration-300"
                     style={{ borderColor: '#2A2D35', backgroundColor: '#252830' }}>
@@ -123,6 +152,17 @@ const AgentCard = ({ agent, onDelete, onToggleStatus, onUpdateEnvVariable }) => 
                                 />
                             </div>
                         ))}
+                        
+                        {/* Save config button */}
+                        <div className="flex justify-end mt-4">
+                            <button
+                                className="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                                style={{ backgroundColor: '#22C55E', color: '#F9FAFB' }}
+                                onClick={() => setShowConfig(false)}
+                            >
+                                Save Configuration
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

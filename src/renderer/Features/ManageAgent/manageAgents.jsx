@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AgentCard from './agentCard';
 
 const ManageAgents = () => {
@@ -36,18 +36,45 @@ const ManageAgents = () => {
         },
     ]);
 
+    // Keep track of pending deletions
+    const [pendingDeletions, setPendingDeletions] = useState([]);
+
+    // Clean up completed deletions
+    useEffect(() => {
+        if (pendingDeletions.length > 0) {
+            const timer = setTimeout(() => {
+                // Filter out agents that were marked for deletion
+                setAgents(agents.filter(agent => !pendingDeletions.includes(agent.id)));
+                setPendingDeletions([]);
+            }, 2000); // 2 second delay for deletion
+            
+            return () => clearTimeout(timer);
+        }
+    }, [pendingDeletions, agents]);
+
     // Function to handle adding a new agent (placeholder)
     const handleAddAgent = () => {
         alert('Add agent functionality will be implemented here');
     };
 
-    // Function to handle agent deletion
+    // Function to handle agent deletion with loading state
     const handleDeleteAgent = (id) => {
-        setAgents(agents.filter(agent => agent.id !== id));
+        // Mark the agent as being deleted (UI indication)
+        setAgents(agents.map(agent => 
+            agent.id === id 
+                ? { ...agent, status: 'Deleting' } 
+                : agent
+        ));
+        
+        // Add to pending deletions
+        setPendingDeletions([...pendingDeletions, id]);
     };
 
     // Function to toggle agent status with loading state
     const handleToggleStatus = (id) => {
+        const targetAgent = agents.find(agent => agent.id === id);
+        const targetStatus = targetAgent.status;
+        
         // First set to Loading state
         setAgents(agents.map(agent => 
             agent.id === id 
@@ -59,7 +86,7 @@ const ManageAgents = () => {
         setTimeout(() => {
             setAgents(agents.map(agent => 
                 agent.id === id 
-                    ? { ...agent, status: agent.status === 'Running' ? 'Stopped' : 'Running' } 
+                    ? { ...agent, status: targetStatus === 'Running' ? 'Stopped' : 'Running' } 
                     : agent
             ));
         }, 2000); // Simulate 2 second delay for starting/stopping
