@@ -1,12 +1,39 @@
 import React, { useState } from 'react';
-import AgentCard from './agentCard'; // Import the new AgentCard component
+import AgentCard from './agentCard';
 
 const ManageAgents = () => {
-    // Dummy data for agents
+    // Updated dummy data for agents with the new status values including Loading possibility
     const [agents, setAgents] = useState([
-        { id: 1, name: 'Agent Alpha', status: 'Active', type: 'Assistant' },
-        { id: 2, name: 'Agent Beta', status: 'Inactive', type: 'Researcher' },
-        { id: 3, name: 'Agent Gamma', status: 'Active', type: 'Analyzer' },
+        { 
+            id: 1, 
+            name: 'Agent Alpha', 
+            status: 'Running', 
+            type: 'Assistant',
+            envVariables: {
+                API_KEY: 'your-api-key',
+                MODEL: 'gpt-4'
+            }
+        },
+        { 
+            id: 2, 
+            name: 'Agent Beta', 
+            status: 'Stopped', 
+            type: 'Researcher',
+            envVariables: {
+                API_KEY: '',
+                DATABASE_URL: 'mongodb://localhost:27017'
+            }
+        },
+        { 
+            id: 3, 
+            name: 'Agent Gamma', 
+            status: 'Running', 
+            type: 'Analyzer',
+            envVariables: {
+                OPENAI_API_KEY: 'your-openai-key',
+                PINECONE_API_KEY: 'your-pinecone-key'
+            }
+        },
     ]);
 
     // Function to handle adding a new agent (placeholder)
@@ -14,9 +41,44 @@ const ManageAgents = () => {
         alert('Add agent functionality will be implemented here');
     };
 
-    // Function to handle agent deletion (placeholder)
+    // Function to handle agent deletion
     const handleDeleteAgent = (id) => {
         setAgents(agents.filter(agent => agent.id !== id));
+    };
+
+    // Function to toggle agent status with loading state
+    const handleToggleStatus = (id) => {
+        // First set to Loading state
+        setAgents(agents.map(agent => 
+            agent.id === id 
+                ? { ...agent, status: 'Loading' } 
+                : agent
+        ));
+
+        // Simulate backend processing time
+        setTimeout(() => {
+            setAgents(agents.map(agent => 
+                agent.id === id 
+                    ? { ...agent, status: agent.status === 'Running' ? 'Stopped' : 'Running' } 
+                    : agent
+            ));
+        }, 2000); // Simulate 2 second delay for starting/stopping
+    };
+
+    // Function to update environment variables
+    const handleUpdateEnvVariable = (id, key, value) => {
+        setAgents(agents.map(agent => {
+            if (agent.id === id) {
+                return {
+                    ...agent,
+                    envVariables: {
+                        ...agent.envVariables,
+                        [key]: value
+                    }
+                };
+            }
+            return agent;
+        }));
     };
 
     return (
@@ -24,10 +86,13 @@ const ManageAgents = () => {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold" style={{ color: '#F9FAFB' }}>Manage Agents</h2>
                 <button 
-                    className="px-4 py-2 rounded-md font-medium transition-colors"
+                    className="px-4 py-2 rounded-md font-medium transition-colors flex items-center"
                     style={{ backgroundColor: '#6366F1', color: '#F9FAFB' }}
                     onClick={handleAddAgent}
                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
                     Add New Agent
                 </button>
             </div>
@@ -38,7 +103,9 @@ const ManageAgents = () => {
                     <AgentCard 
                         key={agent.id} 
                         agent={agent} 
-                        onDelete={handleDeleteAgent} 
+                        onDelete={handleDeleteAgent}
+                        onToggleStatus={handleToggleStatus}
+                        onUpdateEnvVariable={handleUpdateEnvVariable}
                     />
                 ))}
             </div>
@@ -50,6 +117,13 @@ const ManageAgents = () => {
                     style={{ backgroundColor: '#1D1F24', color: '#9CA3AF' }}
                 >
                     <p className="text-lg">No agents found. Create your first agent to get started.</p>
+                    <button 
+                        className="mt-4 px-4 py-2 rounded-md font-medium transition-colors"
+                        style={{ backgroundColor: '#6366F1', color: '#F9FAFB' }}
+                        onClick={handleAddAgent}
+                    >
+                        Create Your First Agent
+                    </button>
                 </div>
             )}
         </div>
