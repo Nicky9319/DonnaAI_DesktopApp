@@ -50,7 +50,18 @@ const Sidebar = ({ activeTab, setActiveTab }) => (
 // MainContent Component
 const MainContent = ({ activeTab }) => (
     <div className="flex-1 p-10 overflow-auto">
-            </div>
+        {activeTab === 'agents' && <ManageAgents />}
+        {activeTab === 'profile' && <ManageProfile />}
+    </div>
+);
+
+const MainPage = () => {
+    const [activeTab, setActiveTab] = useState('agents'); // Default to agents tab
+    
+    return (
+        <div className="flex h-screen" style={{ backgroundColor: '#121317' }}>
+            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <MainContent activeTab={activeTab} />
         </div>
     );
 };
