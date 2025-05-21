@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AgentCard from './agentCard';
 
 const {ipcRenderer} = window.electron;
-// import InstallAgent from '../InstallAgent/installAgent';
+import InstallAgent from '../InstallAgent/installAgent';
 
 // const { exec } = require('child_process');
 
