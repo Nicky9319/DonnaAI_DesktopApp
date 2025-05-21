@@ -1,12 +1,48 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+// Imports and modules !!! ---------------------------------------------------------------------------------------------------
+
+import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from './resources/icon.png?asset'
+
+const {spawn, exec} = require('child_process');
+const fs = require('fs');
+
+const path = require('path');
+
+const {autoUpdater, AppUpdater} = require('electron-differential-updater');
+const {log} = require('electron-log');
+
+const {os} = require('os');
+const {url} = require('inspector');
+
+const Docker = require('dockerode');
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 import { initDb,
   getAgentsInfo,
   addAgentInfo,
   updateAgentEnvVariable} from './db/db.js';
+
+// Imports and modules END !!! ---------------------------------------------------------------------------------------------------
+
+
+
+
+// Variables and constants !!! ---------------------------------------------------------------------------------------------------
+
+let mainWindow;
+
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
+
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+// Variables and constants END !!! ---------------------------------------------------------------------------------------------------
+
+
+
 
 function createWindow() {
   initDb()
