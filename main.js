@@ -180,6 +180,74 @@ function storeDeleteData(key) {
 
 
 
+
+// Utility Functions Section !!! -------------------------------------------------------------------------------------
+
+async function executeCMDCommand(command, needOutput = false) {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`Exec error: ${error}`);
+        reject(error);
+      } else {
+        if (stdout) console.log(`Stdout: ${stdout}`);
+        if (stderr) console.log(`Stderr: ${stderr}`);
+
+        if (needOutput) resolve(stdout);
+        else resolve();
+      }
+    });
+  });
+}
+
+async function loadStore() {
+  const Store = (await import('electron-store')).default;
+  const store = new Store();
+  return store;
+}
+
+async function waitForDockerPing() {
+  return new Promise(async (resolve, reject) => {
+    // const pingInterval = setInterval(async () => {
+    //   try {
+    //     await docker.ping();
+    //     console.log("Engine is Running !!!");
+    //     resolve();
+    //     clearInterval(pingInterval);
+    //   } catch (error) {
+    //     console.log("Docker Engine Not Ready Yet");
+    //   }
+    // }, 5000);
+
+
+  });
+}
+
+// Utility Functions Section END !!! --------------------------------------------------------------------------------
+
+
+
+
+
+
+// Config WSL Section !!! -------------------------------------------------------------------------------------
+
+
+
+// Config WSL Section END !!! --------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
 function createWindow() {
   initDb()
   .then(() => { 
