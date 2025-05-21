@@ -260,8 +260,7 @@ async function waitForDockerPing() {
 
 
 
-
-// App Section !!! -------------------------------------------------------------------------------------
+// App Event Trigger Section !!! --------------------------------------------------------------------------------
 
 
 
@@ -299,6 +298,13 @@ async function handleWebEventTrigger(url) {
 
 }
 
+
+// App Event Trigger Section END !!! ---------------------------------------------------------------------------
+
+
+
+
+// App Section !!! -------------------------------------------------------------------------------------
 
 app.on('second-instance', (event, argv) => {
   const urlArg = argv.find(arg => arg.startsWith('agentbed://'));
