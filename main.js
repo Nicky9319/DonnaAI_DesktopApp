@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const {autoUpdater, AppUpdater} = require('electron-differential-updater');
-const {log} = require('electron-log');
+const log = require('electron-log');
 
 const {os} = require('os');
 const {url} = require('inspector');
@@ -24,6 +24,12 @@ import { initDb,
   addAgentInfo,
   updateAgentEnvVariable} from './db/db.js';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
+import { execSync } from 'child_process';
+
+
 // Imports and modules END !!! ---------------------------------------------------------------------------------------------------
 
 
@@ -32,6 +38,7 @@ import { initDb,
 // Variables and constants !!! ---------------------------------------------------------------------------------------------------
 
 let mainWindow;
+let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
@@ -40,6 +47,135 @@ autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 
 // Variables and constants END !!! ---------------------------------------------------------------------------------------------------
+
+
+
+
+
+// IPC On Section !!! ------------------------------------------------------------------------------------------------------
+
+ipcMain.on('change-window', (event, arg) => {
+  console.log("Changing The Application Window !!!!")
+  window_name = "html/" + arg;
+  // window_name = arg;
+  mainWindow.loadFile(window_name);
+})
+
+// IPC On Section END !!! ---------------------------------------------------------------------------------------------------
+
+
+
+
+
+// IPC Handle Section !!! ------------------------------------------------------------------------------------------------------
+
+
+ipcMain.handle('get-ip-address', async (event) => {
+});
+
+
+ipcMain.handle('store-data', (event, key, value) => {
+  storeStoreData(key, value);
+});
+
+ipcMain.handle('store-has', (event, key) => {
+  return storeHas(key);
+});
+
+ipcMain.handle('get-data', (event, key) => {
+  return storeGetData(key);
+});
+
+ipcMain.handle('delete-data', (event, key) => {
+  storeDeleteData(key);
+});
+
+
+ipcMain.handle('show-dialog', async (event, dialogType, dialogTitle, dialogMessage) => {
+  await dialog.showMessageBox({
+    type: dialogType,
+    title: dialogTitle,
+    message: dialogMessage
+  })
+
+  return;
+});
+
+
+ipcMain.handle('start-agent', (event, agentId) => {
+
+})
+
+ipcMain.handle('stop-agent', (event, agentId) =>{
+
+})
+
+// IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+// Auto Update Section !!! -------------------------------------------------------------------------------------
+
+autoUpdater.on('checking-for-update', () => {
+  console.log("Checking for Update")
+  log.info('Checking for update...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  // autoUpdater.downloadUpdate();
+  log.info('Update available.');
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  log.info('Update not available.');
+});
+
+autoUpdater.on('error', (err) => {
+  log.error('Error in auto-updater. ' + err);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = 'Download speed: ' + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')';
+  log.info(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  log.info('Update downloaded');
+});
+
+// Auto Updater Section END !!! ----------------------------------------------------------------------------------
+
+
+
+
+
+
+// Electron - Store Utility Section !!! -------------------------------------------------------------------------------------
+
+function storeStoreData(key, value) {
+  store.set(key, value);
+}
+
+function storeHas(key) {
+  return store.has(key);
+}
+
+function storeGetData(key) {
+  return store.get(key);
+}
+
+function storeDeleteData(key) {
+  store.delete(key);
+}
+
+// Electron Store Utility Section END !!! ----------------------------------------------------------------------------------
+
 
 
 
