@@ -16,7 +16,7 @@ const ManageAgents = () => {
     // Loading state
     const [isLoading, setIsLoading] = useState(true);
     // Keep track of pending deletions
-    const [pendingDeletions, setPendingDeletions] = useState([]);
+    const [pendingDeletions, setPendingDeletions] = useState([]);   
 
     // Load agents from database on component mount
     useEffect(() => {

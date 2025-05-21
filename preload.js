@@ -1,20 +1,40 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+const path = require('path')
 
-// Custom APIs for renderer
-const api = {}
+import { initDb,
+  getAgentsInfo,
+  addAgentInfo,
+  updateAgentEnvVariable} from './db/db.js';
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+  
+// Import the db functions with direct relative path
+let dbApi = {initDb, getAgentsInfo, addAgentInfo, updateAgentEnvVariable};
+
+
+
 if (process.contextIsolated) {
-  try {
+  try{
     contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
+
+    contextBridge.exposeInMainWorld('db', {
+      updateAgentEnvVariable: (agentId, envVariable) => dbApi.updateAgentEnvVariable ? dbApi.updateAgentEnvVariable(agentId, envVariable) : Promise.reject('db not loaded'),
+      getAgentsInfo: () => dbApi.getAgentsInfo ? dbApi.getAgentsInfo() : Promise.reject('db not loaded'),
+      addAgentInfo: (agent) => dbApi.addAgentInfo ? dbApi.addAgentInfo(agent) : Promise.reject('db not loaded'),
+      initDb: () => dbApi.initDb ? dbApi.initDb() : Promise.reject('db not loaded'),
+    });
+
+  }
+  catch (error) {
     console.error(error)
   }
-} else {
+}
+else{
   window.electron = electronAPI
-  window.api = api
+  window.db = {
+    updateAgentEnvVariable: (agentId, envVariable) => dbApi.updateAgentEnvVariable ? dbApi.updateAgentEnvVariable(agentId, envVariable) : Promise.reject('db not loaded'),
+    getAgentsInfo: () => dbApi.getAgentsInfo ? dbApi.getAgentsInfo() : Promise.reject('db not loaded'),
+    addAgentInfo: (agent) => dbApi.addAgentInfo ? dbApi.addAgentInfo(agent) : Promise.reject('db not loaded'),
+    initDb: () => dbApi.initDb ? dbApi.initDb() : Promise.reject('db not loaded'),
+  }
 }
