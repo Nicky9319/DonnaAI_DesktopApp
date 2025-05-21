@@ -102,6 +102,7 @@ ipcMain.handle('show-dialog', async (event, dialogType, dialogTitle, dialogMessa
 });
 
 
+
 ipcMain.handle('start-agent', (event, agentId) => {
 
 })
@@ -109,6 +110,23 @@ ipcMain.handle('start-agent', (event, agentId) => {
 ipcMain.handle('stop-agent', (event, agentId) =>{
 
 })
+
+
+
+ipcMain.handle('db:getAgentsInfo', async () => {
+  return await getAgentsInfo();
+});
+
+// Add a new agent
+ipcMain.handle('db:addAgentInfo', async (event, agentInfo) => {
+  return await addAgentInfo(agentInfo);
+});
+
+// New handler for updating environment variables
+ipcMain.handle('db:updateAgentEnv', async (event, agentId, varName, varValue) => {
+  return await updateAgentEnvVariable(agentId, varName, varValue);
+});
+
 
 // IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
 
@@ -239,6 +257,11 @@ async function waitForDockerPing() {
 
 
 
+
+
+
+
+// 
 
 
 
