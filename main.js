@@ -624,6 +624,38 @@ function ExecuteWslConfigShScript(username , password , distroName){
   })
 }
 
+
+/** Executes a Command Inside a particular WSL Distro with a particular user */
+function executeWslCommand(command , distroName , username = "root" , needOutput = false){
+  return new Promise((resolve, reject) => {
+      const ExecuteCMD = `wsl -d ${distroName} -u ${username} --exec bash -c "${command}"`
+      const process = spawn('powershell.exe', [ExecuteCMD]);
+
+      let stdout = '';
+      process.stdout.on('data', (data) => {
+          stdout += data.toString();
+      });
+
+      let stderr = '';
+      process.stderr.on('data', (data) => {
+        // console.log("Error : " , data.toString());
+          stderr += data.toString();
+      });
+
+      process.on('close', (code) => {
+        if(code === 0){
+          if (needOutput) resolve(stdout);
+          else resolve();
+        }
+        else{
+          console.log("Error Exist In this Command");
+          resolve("Error");
+          // reject(new Error(`Command failed with code ${code}: ${stderr}`));
+        }
+      });
+  });
+}
+
 // App Event Trigger Section !!! --------------------------------------------------------------------------------
 
 
