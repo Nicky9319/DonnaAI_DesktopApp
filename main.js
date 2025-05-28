@@ -379,10 +379,250 @@ function checkDistroPresent(distroName){
   })
 }
 
+// !!!! Need to be Updated
+/** Check if All the Configurations Needed to Run Containers Inside a Distro Is Completed or Not, Return -> Boolean */
+function checkWslConfigDone(distroName){
+  return new Promise((resolve, reject) => {
+      checkNvidiaContainerConfigDone(distroName).then((result) => {
+          if (!result) {
+              resolve(false);
+              return;
+          }
+
+          checkPodmanConfigDone(distroName).then((result) => {
+              resolve(result);
+              return;
+          })
+      })
 
 
 
 
+  })
+}
+
+/** Handled the Actions to take based on the Wsl State */
+function handleWslStateActions(state){
+  console.log("Current Wsl State : " , state);
+  if(state == "RestartSystem"){
+      console.log("Need to Restart System");
+      ConfigSetupWslBeforeRestart().then(() => {
+          console.log("Pre-requisites Done");
+          mainWindow.webContents.send('navigate-to-component' , '/LoginPage/RestartWidget');
+      });
+  }
+  else if(state == "ConfigureDistro" || state == "InstallDistro"){
+      console.log("Need to Install or Configure Distro");
+      mainWindow.webContents.send('navigate-to-component' , '/LoginPage/ConfigLoadingWidget');
+  }
+  else{
+    storeStoreData('isWslSetupDone' , true);
+    mainWindow.webContents.send('navigate-to-component' , '/MainPage');
+  }
+}
+
+/** Completes the Configuration for Wsl Before Restart */
+function ConfigSetupWslBeforeRestart(){
+  return new Promise(async (resolve, reject) => {
+      console.log("Starting Pre-requisites")
+
+      VMPComponentActivateCommand = "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
+      try {await spawnPowerShellCommand(VMPComponentActivateCommand);} catch(error) {}
+      console.log("VMP Activated")
+
+      WslInstallCommand = `wsl.exe --install --no-distribution`;
+      await spawnPowerShellCommand(WslInstallCommand);
+      console.log("Wsl No Distro Installed")
+
+      KernelUpdateCommand = `wsl.exe --update`;
+      await spawnPowerShellCommand(KernelUpdateCommand);
+      resolve();
+  });
+}
+
+/** Configures the Complete Wsl Distro to run Containers By a specific User*/
+async function ConfigWslFromScratch(username, password , distroName){
+  console.log("configuring Wsl from Scratch")
+  try {await MakeWslSetupDirectory(username , distroName);} catch(error){}
+  console.log("Directory Work Done")
+  await CopyShScriptToWsl(username , distroName);
+  await ExecuteWslConfigShScript(username , password , distroName);
+}
+
+/** Installing the Complete Wsl Distro from Scratch and Configuring the Envrionment for that Distro */
+function InstallWslDistroandConfigUser(username , password , distroName){
+  return new Promise((resolve, reject) => {
+    // console.log("Starting Wsl Installation and Config")
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    InstallDistroWSL(signal , distroName);
+
+    EventDistroInstalled = new Promise(async (resolve, reject) => {
+        while(true){
+            // console.log("Checking for Distro Installation");
+            const isPresent = await checkDistroPresent(distroName);
+            console.log(isPresent);
+
+            if(isPresent){
+                console.log("Distro Found");
+                controller.abort();
+                resolve();
+                break;
+            }
+            
+            await new Promise((resolve , reject) => {
+                setTimeout(() => {
+                    resolve();
+                }, 5000);
+            });
+
+        }
+    });
+
+    EventDistroInstalled
+    .then(() =>{
+        console.log("Distro Installed Can Move forward to User Adding");
+        AddNewUserInDistro(username , password , distroName , true)
+        .then(async () => {
+            console.log("User Added");
+
+            await ConfigWslFromScratch(username , password , distroName);
+
+            resolve();
+        });
+    });
+
+
+  });
+
+}
+
+
+// !!!! Need to be Updated
+/** Install a Distro In Wsl */  // 
+function InstallDistroWSL(signal , distroName){
+  return new Promise((resolve, reject) => {
+      console.log(`Installing the Desired Distro: ${distroName}`);
+      const InstallDistroProcess = spawn('wsl', ['--install', '-d', distroName]);
+
+      InstallDistroProcess.on('close', () => {
+          console.log(`Process of Installing the Desired Distro has Completed`);
+          resolve();
+          return;
+      });
+
+
+      signal.addEventListener('abort', () => {
+          console.log("Abort Signal Received");
+          InstallDistroProcess.kill('SIGKILL');
+          resolve();
+          return;
+      });
+
+  });
+}
+
+/** Setting Up a new User Inside a Distro alongiside with its password */
+function AddNewUserInDistro(username , password , distroName , sudoAccess){
+  return new Promise(async (resolve, reject) => {
+      await AddUserToDistro(username , distroName , sudoAccess);
+      await ChangeUserPasswordInDistro(username , password , distroName);
+      resolve();
+  });
+}
+
+/** Adds a User To Distro Without Setting Password */
+function AddUserToDistro(username , distroName , sudoAccess){
+  return new Promise((resolve, reject) => {
+
+      let AddUserCommand = `wsl -d ${distroName} --exec bash -c "useradd -m -s /bin/bash ${username}"`;
+      if(sudoAccess)
+          AddUserCommand = `wsl -d ${distroName} --exec bash -c "useradd -m -s /bin/bash -G sudo ${username}"`;
+
+
+      console.log(AddUserCommand)
+      const AddUserProcess = spawn('powershell.exe', [AddUserCommand]);
+
+      AddUserProcess.stderr.on('data', (data) => {
+          console.error(`stderr: ${data}`);
+      });
+
+      AddUserProcess.on('close', () => {
+          resolve();
+      });
+
+      AddUserProcess.stdout.on('data', (data) => {
+          console.log(`stdout: ${data}`);
+      });
+
+  });
+}
+
+/** Changes the password for a specific User in a specific Distro */
+function ChangeUserPasswordInDistro(username , password , distroName){
+  return new Promise((resolve, reject) => {
+      const ChangePasswordCommand = `echo ${username}:${password} | chpasswd`;
+      console.log(ChangePasswordCommand)
+
+      const ChangePasswordProcess = spawn('wsl', ['-d', distroName, '--exec', 'bash', '-c', ChangePasswordCommand]);
+
+      ChangePasswordProcess.stderr.on('data', (data) => {
+          console.error(`stderr: ${data}`);
+      });
+
+      ChangePasswordProcess.on('close', () => {
+          console.log("Password Changed");
+          resolve();
+      });
+  });
+}
+
+// !!!! Need to be Updated
+/** Set-ups Directory For a Particular User Inside particular Distro Used To Store Sh Scripts Needed to Setup Environment */
+function MakeWslSetupDirectory(username ,  distroName){
+  return new Promise((resolve, reject) => {
+    commandToExecute = "mkdir ~/wslSetupScript"
+    logger.info('Main Js: Making Directory for Storing Wsl Setup Script')
+    executeWslCommand(commandToExecute , distroName , username).then(() => {
+        logger.info('Main Js: Directory Made for Storing Wsl Setup Script')
+        resolve();
+    });
+  })
+}
+
+// !!!! Need to be Updated
+/** Copying Sh Script From Host machine OS to Wsl for a particular user inside a particular Distro*/
+function CopyShScriptToWsl(username , distroName){
+  return new Promise((resolve, reject) => {
+    commandToExecute = `cp ./wslPodmanSetup.sh ~/wslSetupScript`
+    logger.info('Main Js: Copying Sh Script to Wsl')
+    executeWslCommand(commandToExecute , distroName , username).then(() => {
+        logger.info('Main Js: Sh Script Copied to Wsl')
+        resolve();
+    });
+  })
+}
+
+// !!!! Need to be Updated
+/** Executing the Sh Files Inside a Distro for a particular User */
+function ExecuteWslConfigShScript(username , password , distroName){
+  return new Promise((resolve, reject) => {
+    console.log("Running the Script to Configure WSL Distro")
+    commandToExecute = `cd /home/${username}/wslSetupScript  && echo ${password} | sudo -S bash wslPodmanSetup.sh`
+    console.log(password);
+    // executeWslCommand(commandToExecute , distroName , username).then(() => {
+    //     console.log("Script Executed !!!")
+    //     resolve();
+    // });
+    logger.info('Main Js: Executing the Sh Script to Configure WSL Distro')
+    const ExecuteCMD = `wsl -d ${distroName} -u ${username} --exec bash -c "cd /home/${username}/wslSetupScript  && echo ${password} | sudo -S bash wslPodmanSetup.sh"`
+    spawnPowerShellCommand(ExecuteCMD).then(() => {
+        logger.info('Main Js: Script Executed and configuration Completed')
+        resolve();
+    });
+  })
+}
 
 // App Event Trigger Section !!! --------------------------------------------------------------------------------
 
