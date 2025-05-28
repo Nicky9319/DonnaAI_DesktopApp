@@ -201,6 +201,35 @@ function storeDeleteData(key) {
 
 // Utility Functions Section !!! -------------------------------------------------------------------------------------
 
+async function spawnPowerShellCommand(command , needOutput = false){
+  return new Promise((resolve, reject) => {
+      const process = spawn('powershell.exe', [command]);
+
+      let stdout = '';
+      process.stdout.on('data', (data) => {
+          stdout += data.toString();
+      });
+
+      let stderr = '';
+      process.stderr.on('data', (data) => {
+          stderr += data.toString();
+      });
+
+      process.on('close', (code) => {
+        if(code === 0){
+          if (needOutput) resolve(stdout);
+          else resolve();
+        }
+        else{
+          resolve()
+        }
+        // else{
+        //   reject(new Error(`Command failed with code ${code}: ${stderr}`));
+        // }
+      });
+  });
+}
+
 async function executeCMDCommand(command, needOutput = false) {
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
@@ -254,6 +283,101 @@ async function waitForDockerPing() {
 
 // Config WSL Section END !!! --------------------------------------------------------------------------------
 
+/** Returns the Current State Of Wsl Helping to Decide What Step of Configuration is Wsl Currently present at */
+/** 3 States [RestartSystem, InstallDistro,  ConfigureDistro, Good] */
+function GetWslState(){
+  return new Promise(async (resolve, reject) => {
+    needsSystemRestart = await CheckWslNeedsRestart();
+    if(needsSystemRestart){
+        resolve("RestartSystem");
+        return;
+    }
+
+    distroInstalled = await checkDistroPresent('Ubuntu');
+    if(!distroInstalled){
+        resolve("InstallDistro");
+        return;
+    }
+
+    wslConfigCompleted = await checkWslConfigDone('Ubuntu');
+    if(!wslConfigCompleted){
+        resolve("ConfigureDistro");
+        return;
+    }
+
+    resolve("Good");
+    return;
+  });
+}
+
+/** Gets The Current Wsl Status */
+function GetWslSTATUS(){
+  return new Promise((resolve, reject) => {
+      spawnPowerShellCommand('wsl.exe --status' , true).then((output) => {
+          resolve(output);
+      });
+  });
+}
+
+/** Checks If Wsl needs Restart Because of the current Wsl Status */
+function CheckWslNeedsRestart(){
+  return new Promise((resolve, reject) => {
+      GetWslSTATUS().then(async (status) => {
+          statusOutput = status.toString().replace(/\x00/g, '').trim();
+
+          EnableVMPComponentStatement = `Please enable the "Virtual Machine Platform" optional component and ensure virtualization is enabled in the BIOS.`;
+          CommandToEnableComponentStatement = `Enable "Virtual Machine Platform" by running: wsl.exe --install --no-distribution For information please visit https://aka.ms/enablevirtualization`
+
+          if(statusOutput.includes(EnableVMPComponentStatement) || statusOutput.includes(CommandToEnableComponentStatement)){
+              resolve(true);
+              return;
+          }
+
+          resolve(false);
+          return;
+      });
+  });
+}
+
+/** Checks if a specific Distro is present Inside Wsl or not */
+function checkDistroPresent(distroName){
+
+  return new Promise((resolve, reject) => {
+      exec('wsl --list --quiet', (error, stdout, stderr) => {
+
+          if (error) {
+              console.error(`Error checking for distros: ${error.message}`);
+              resolve(false);
+              return;
+          }
+
+          if (stderr) {
+              console.error(`Standard error: ${stderr}`);
+              resolve(false);
+              return;
+          }
+
+          if (stdout) {
+              output = stdout.toString().replace(/\x00/g, '').trim();
+              if(output.split('\n').map(line => line.replace(/\r$/, '')).includes(distroName)) {
+                  console.log("Distro Found");
+                  resolve(true);
+                  return;
+              }
+              else{
+                  resolve(false);
+                  return;
+              }         
+          } 
+
+          if (stdout == '') {
+              resolve(false);
+              return;
+          }
+      });
+
+  })
+}
 
 
 
