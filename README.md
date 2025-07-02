@@ -34,19 +34,11 @@ $ npm run build:linux
 ```
 
 
-# Connecting Dockerode (Node.js) to Docker in WSL
+## Connecting Dockerode (Node.js) to Docker in WSL
 
 This guide documents the **technical steps** taken to enable Dockerode (Node.js) to connect to Docker running inside a WSL2 distro on Windows.
 
 ---
-
-## ✅ Objective
-
-Enable Node.js running on Windows to interact with Docker running inside WSL2 using the `dockerode` library.
-
----
-
-## 🔧 Technical Steps to Make It Work
 
 ### 1. **Modify Docker Service Configuration in WSL**
 
