@@ -776,8 +776,8 @@ app.whenReady().then(async () => {
 
   // Creating Window
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 1024,
+    width: 1200,
+    height: 800,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
