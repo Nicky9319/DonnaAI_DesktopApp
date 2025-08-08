@@ -66,7 +66,7 @@ const ActiveTasksPage = () => {
         : tasks.filter(t => t.status === normalizedStatus(activeFilter));
 
     return (
-        <div className="min-h-full p-4 space-y-4" style={{ backgroundColor: '#000000' }}>
+        <div className="min-h-full p-4 space-y-8" style={{ backgroundColor: '#000000' }}>
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -201,13 +201,13 @@ const ActiveTasksPage = () => {
             </div>
 
             {/* Task Cards */}
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-6'}>
                 {filteredTasks.map((task) => (
                     <div key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
                         <TaskCard
+                            id={task.id}
                             query={task.query}
                             status={task.status}
-                            onAction={(action) => handleTaskAction(task.id, action)}
                             isClickable={true}
                         />
                     </div>

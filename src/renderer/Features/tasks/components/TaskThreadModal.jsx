@@ -13,8 +13,8 @@ const TaskThreadModal = ({ task, onClose }) => {
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
-            <div className="w-full h-full flex flex-col" style={{ backgroundColor: '#000000' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+            <div className="w-full max-w-4xl h-[80vh] flex flex-col rounded-2xl overflow-hidden" style={{ backgroundColor: '#000000', border: '1px solid #1C1C1E' }}>
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#1C1C1E' }}>
                     <div className="flex-1">
