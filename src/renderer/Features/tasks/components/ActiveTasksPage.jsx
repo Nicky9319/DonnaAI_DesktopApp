@@ -201,7 +201,7 @@ const ActiveTasksPage = () => {
             </div>
 
             {/* Task Cards */}
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-6'}>
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-30'}>
                 {filteredTasks.map((task) => (
                     <div key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
                         <TaskCard
@@ -210,7 +210,10 @@ const ActiveTasksPage = () => {
                             status={task.status}
                             isClickable={true}
                         />
+                        {viewMode != 'grid' && <br />}
                     </div>
+                     
+                     
                 ))}
             </div>
 
