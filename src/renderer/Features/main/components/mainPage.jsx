@@ -6,7 +6,7 @@ import TaskThreadPage from '../../chat/components/TaskThreadPage';
 
 // MainContent Component
 const MainContent = ({ activeTab }) => (
-    <div className="flex-1 p-10 overflow-auto" style={{ backgroundColor: '#0D1B2A' }}>
+    <div className="flex-1 overflow-auto" style={{ backgroundColor: '#000000' }}>
         {activeTab === 'home' && <HomePage />}
         {activeTab === 'activeTasks' && <ActiveTasksPage />}
         {activeTab === 'taskThread' && <TaskThreadPage />}
@@ -17,7 +17,7 @@ const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
     
     return (
-        <div className="flex h-screen" style={{ backgroundColor: '#0D1B2A' }}>
+        <div className="flex h-screen" style={{ backgroundColor: '#000000' }}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
             <MainContent activeTab={activeTab} />
         </div>

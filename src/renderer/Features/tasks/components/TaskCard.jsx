@@ -16,9 +16,9 @@ const TaskCard = ({ query, status, onAction }) => {
                 };
             case 'halted':
                 return {
-                    color: '#FDCB6E',
+                    color: '#FF9500',
                     label: 'Halted',
-                    bgColor: 'rgba(253, 203, 110, 0.2)',
+                    bgColor: 'rgba(255, 149, 0, 0.2)',
                     icon: (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -27,9 +27,9 @@ const TaskCard = ({ query, status, onAction }) => {
                 };
             case 'userStopped':
                 return {
-                    color: '#FF6B6B',
+                    color: '#FF3B30',
                     label: 'Stopped',
-                    bgColor: 'rgba(255, 107, 107, 0.2)',
+                    bgColor: 'rgba(255, 59, 48, 0.2)',
                     icon: (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

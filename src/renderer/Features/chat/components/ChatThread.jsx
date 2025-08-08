@@ -5,30 +5,30 @@ const ChatThread = ({ threads = [], messages = {} }) => {
     const [selectedThread, setSelectedThread] = useState(threads[0]?.id || '');
 
     return (
-        <div className="h-full flex flex-col" style={{ backgroundColor: '#0D1B2A' }}>
+        <div className="h-full flex flex-col" style={{ backgroundColor: '#000000' }}>
             {/* Thread Selector */}
-            <div className="mb-8 p-6 border-b" style={{ borderColor: 'rgba(58, 134, 255, 0.1)' }}>
+            <div className="mb-6 p-6 border-b" style={{ borderColor: '#1C1C1E' }}>
                 <label 
-                    className="block text-lg font-medium mb-4"
+                    className="block text-lg font-light mb-3"
                     style={{ color: '#FFFFFF' }}
                 >
                     Select Thread
                 </label>
                 <select
-                    className="w-full max-w-md p-4 rounded-2xl text-sm transition-all duration-200 border backdrop-blur-sm focus:outline-none"
+                    className="w-full max-w-md p-3 rounded-xl text-sm transition-all duration-150 border focus:outline-none"
                     style={{ 
-                        backgroundColor: 'rgba(26, 35, 50, 0.8)',
-                        color: '#F1F1F1',
-                        borderColor: 'rgba(58, 134, 255, 0.2)'
+                        backgroundColor: '#111111',
+                        color: '#E5E5E7',
+                        borderColor: '#1C1C1E'
                     }}
                     value={selectedThread}
                     onChange={(e) => setSelectedThread(e.target.value)}
                     onFocus={(e) => {
-                        e.target.style.borderColor = '#3A86FF';
-                        e.target.style.boxShadow = '0 0 20px rgba(58, 134, 255, 0.3)';
+                        e.target.style.borderColor = '#007AFF';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 122, 255, 0.1)';
                     }}
                     onBlur={(e) => {
-                        e.target.style.borderColor = 'rgba(58, 134, 255, 0.2)';
+                        e.target.style.borderColor = '#1C1C1E';
                         e.target.style.boxShadow = 'none';
                     }}
                 >
@@ -37,8 +37,8 @@ const ChatThread = ({ threads = [], messages = {} }) => {
                             key={thread.id} 
                             value={thread.id}
                             style={{ 
-                                backgroundColor: '#1A2332',
-                                color: '#F1F1F1'
+                                backgroundColor: '#111111',
+                                color: '#E5E5E7'
                             }}
                         >
                             {thread.name}
@@ -61,14 +61,14 @@ const ChatThread = ({ threads = [], messages = {} }) => {
                     </div>
                 ) : (
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-center space-y-4">
+                        <div className="text-center space-y-3">
                             <div 
-                                className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center"
-                                style={{ backgroundColor: 'rgba(58, 134, 255, 0.1)' }}
+                                className="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center"
+                                style={{ backgroundColor: 'rgba(0, 122, 255, 0.1)' }}
                             >
                                 <svg 
-                                    className="w-8 h-8" 
-                                    style={{ color: '#3A86FF' }}
+                                    className="w-6 h-6" 
+                                    style={{ color: '#007AFF' }}
                                     fill="none" 
                                     stroke="currentColor" 
                                     viewBox="0 0 24 24"
@@ -78,14 +78,14 @@ const ChatThread = ({ threads = [], messages = {} }) => {
                             </div>
                             <div>
                                 <h3 
-                                    className="text-xl font-medium mb-2"
+                                    className="text-lg font-medium mb-1"
                                     style={{ color: '#FFFFFF' }}
                                 >
                                     No messages yet
                                 </h3>
                                 <p 
                                     className="text-sm"
-                                    style={{ color: '#E0E0E0' }}
+                                    style={{ color: '#8E8E93' }}
                                 >
                                     Start a conversation with Donna
                                 </p>
@@ -96,43 +96,42 @@ const ChatThread = ({ threads = [], messages = {} }) => {
             </div>
 
             {/* Input Area */}
-            <div className="p-6 border-t" style={{ borderColor: 'rgba(58, 134, 255, 0.1)' }}>
-                <div className="flex space-x-4">
+            <div className="p-6 border-t" style={{ borderColor: '#1C1C1E' }}>
+                <div className="flex space-x-3">
                     <input
                         type="text"
                         placeholder="Type your message..."
-                        className="flex-1 px-6 py-4 rounded-2xl border transition-all duration-200 focus:outline-none"
+                        className="flex-1 px-4 py-3 rounded-xl border transition-all duration-150 focus:outline-none text-sm"
                         style={{
-                            backgroundColor: 'rgba(26, 35, 50, 0.8)',
-                            borderColor: 'rgba(58, 134, 255, 0.2)',
-                            color: '#F1F1F1'
+                            backgroundColor: '#111111',
+                            borderColor: '#1C1C1E',
+                            color: '#E5E5E7'
                         }}
                         onFocus={(e) => {
-                            e.target.style.borderColor = '#3A86FF';
-                            e.target.style.boxShadow = '0 0 20px rgba(58, 134, 255, 0.3)';
+                            e.target.style.borderColor = '#007AFF';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(0, 122, 255, 0.1)';
                         }}
                         onBlur={(e) => {
-                            e.target.style.borderColor = 'rgba(58, 134, 255, 0.2)';
+                            e.target.style.borderColor = '#1C1C1E';
                             e.target.style.boxShadow = 'none';
                         }}
                     />
                     <button
-                        className="px-6 py-4 rounded-2xl transition-all duration-200 hover:scale-105"
+                        className="px-4 py-3 rounded-xl transition-all duration-150"
                         style={{
-                            backgroundColor: '#3A86FF',
-                            color: '#FFFFFF',
-                            boxShadow: '0 4px 20px rgba(58, 134, 255, 0.3)'
+                            backgroundColor: '#007AFF',
+                            color: '#FFFFFF'
                         }}
                         onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = '#265DF2';
-                            e.target.style.boxShadow = '0 6px 24px rgba(58, 134, 255, 0.4)';
+                            e.target.style.backgroundColor = '#0056CC';
+                            e.target.style.transform = 'scale(0.98)';
                         }}
                         onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = '#3A86FF';
-                            e.target.style.boxShadow = '0 4px 20px rgba(58, 134, 255, 0.3)';
+                            e.target.style.backgroundColor = '#007AFF';
+                            e.target.style.transform = 'scale(1)';
                         }}
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
                     </button>
