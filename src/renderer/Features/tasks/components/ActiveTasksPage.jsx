@@ -76,6 +76,7 @@ const ActiveTasksPage = () => {
                     >
                         Active Tasks
                     </h1>
+                    <br />
                     <p 
                         className="text-sm font-light"
                         style={{ color: '#8E8E93' }}

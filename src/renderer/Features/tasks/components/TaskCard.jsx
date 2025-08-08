@@ -30,7 +30,7 @@ const TaskCard = ({ id, query, status, isClickable }) => {
 
     return (
         <div 
-            className={`rounded-2xl p-5 border transition-all duration-300 group ${isClickable ? 'hover:border-opacity-80 hover:scale-[1.02] hover:shadow-lg' : ''}`}
+            className={`rounded-2xl p-5 border transition-all duration-300 group ${isClickable ? 'hover:scale-[1.02]' : ''}`}
             style={{ 
                 backgroundColor: '#1C1C1E',
                 borderColor: '#2D2D2F'
@@ -38,13 +38,11 @@ const TaskCard = ({ id, query, status, isClickable }) => {
             onMouseEnter={(e) => {
                 if (isClickable) {
                     e.target.style.borderColor = '#007AFF';
-                    e.target.style.boxShadow = '0 8px 32px rgba(0, 122, 255, 0.15)';
                 }
             }}
             onMouseLeave={(e) => {
                 if (isClickable) {
                     e.target.style.borderColor = '#2D2D2F';
-                    e.target.style.boxShadow = 'none';
                 }
             }}
         >
