@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TaskCard from './TaskCard';
+import TaskThreadModal from './TaskThreadModal';
 
 const ActiveTasksPage = () => {
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+    const [selectedTask, setSelectedTask] = useState(null); // For modal
+    const [activeFilter, setActiveFilter] = useState('All'); // 'All' | 'Active' | 'Halted' | 'Stopped'
+    
     const tasks = [
         {
             id: 1,
@@ -35,6 +40,31 @@ const ActiveTasksPage = () => {
         // TODO: Implement task action logic
     };
 
+    const handleTaskClick = (task) => {
+        setSelectedTask(task);
+    };
+
+    const closeModal = () => {
+        setSelectedTask(null);
+    };
+
+    const normalizedStatus = (label) => {
+        switch (label) {
+            case 'Active':
+                return 'active';
+            case 'Halted':
+                return 'halted';
+            case 'Stopped':
+                return 'userStopped';
+            default:
+                return null;
+        }
+    };
+
+    const filteredTasks = activeFilter === 'All'
+        ? tasks
+        : tasks.filter(t => t.status === normalizedStatus(activeFilter));
+
     return (
         <div className="min-h-full p-4 space-y-4" style={{ backgroundColor: '#000000' }}>
             {/* Header */}
@@ -53,84 +83,134 @@ const ActiveTasksPage = () => {
                         Monitor and manage your ongoing tasks
                     </p>
                 </div>
-                <div className="flex items-center space-x-2">
+                {/* Task Statistics Widgets */}
+                <div className="flex items-center space-x-5">
+                    {/* Active Tasks Widget */}
                     <div 
-                        className="px-3 py-1.5 rounded-lg border"
+                        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg"
                         style={{ 
                             backgroundColor: '#111111',
-                            borderColor: '#1C1C1E',
-                            color: '#E5E5E7'
+                            border: '1px solid #1C1C1E'
                         }}
                     >
-                        <span className="text-xs font-medium">
-                            <span style={{ color: '#00D09C' }}>{tasks.filter(t => t.status === 'active').length}</span> Active
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#00D09C' }}></div>
+                        <span className="text-xs font-medium" style={{ color: '#E5E5E7' }}>
+                            <span className="font-semibold" style={{ color: '#00D09C' }}>
+                                {tasks.filter(t => t.status === 'active').length}
+                            </span>
+                            <span className="ml-1">Active</span>
                         </span>
                     </div>
-                    <button
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150"
+
+                    {/* Halted Tasks Widget */}
+                    <div 
+                        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg"
                         style={{ 
-                            backgroundColor: '#007AFF',
-                            color: '#FFFFFF'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = '#0056CC';
-                            e.target.style.transform = 'scale(0.98)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = '#007AFF';
-                            e.target.style.transform = 'scale(1)';
+                            backgroundColor: '#111111',
+                            border: '1px solid #1C1C1E'
                         }}
                     >
-                        <span className="flex items-center space-x-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>New Task</span>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FF9500' }}></div>
+                        <span className="text-xs font-medium" style={{ color: '#E5E5E7' }}>
+                            <span className="font-semibold" style={{ color: '#FF9500' }}>
+                                {tasks.filter(t => t.status === 'halted').length}
+                            </span>
+                            <span className="ml-1">Halted</span>
                         </span>
+                    </div>
+
+                    {/* Stopped Tasks Widget */}
+                    <div 
+                        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg"
+                        style={{ 
+                            backgroundColor: '#111111',
+                            border: '1px solid #1C1C1E'
+                        }}
+                    >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FF3B30' }}></div>
+                        <span className="text-xs font-medium" style={{ color: '#E5E5E7' }}>
+                            <span className="font-semibold" style={{ color: '#FF3B30' }}>
+                                {tasks.filter(t => t.status === 'userStopped').length}
+                            </span>
+                            <span className="ml-1">Stopped</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Task Filters and View Toggle */}
+            <div className="flex items-center justify-between">
+                <div className="flex space-x-1.5">
+                    {['All', 'Active', 'Halted', 'Stopped'].map((filter) => (
+                        <button
+                            key={filter}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 border"
+                            style={{ 
+                                backgroundColor: activeFilter === filter ? '#007AFF' : '#0A0A0A',
+                                color: activeFilter === filter ? '#FFFFFF' : '#8E8E93',
+                                borderColor: activeFilter === filter ? '#007AFF' : '#1C1C1E'
+                            }}
+                            onClick={() => setActiveFilter(filter)}
+                            onMouseEnter={(e) => {
+                                if (activeFilter !== filter) {
+                                    e.target.style.backgroundColor = '#111111';
+                                    e.target.style.borderColor = '#1C1C1E';
+                                    e.target.style.color = '#E5E5E7';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeFilter !== filter) {
+                                    e.target.style.backgroundColor = '#0A0A0A';
+                                    e.target.style.borderColor = '#1C1C1E';
+                                    e.target.style.color = '#8E8E93';
+                                }
+                            }}
+                        >
+                            {filter}
+                        </button>
+                    ))}
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex items-center space-x-1 border rounded-lg p-1" style={{ borderColor: '#1C1C1E' }}>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className="px-2 py-1 rounded text-xs transition-all duration-150"
+                        style={{
+                            backgroundColor: viewMode === 'list' ? '#007AFF' : 'transparent',
+                            color: viewMode === 'list' ? '#FFFFFF' : '#8E8E93'
+                        }}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className="px-2 py-1 rounded text-xs transition-all duration-150"
+                        style={{
+                            backgroundColor: viewMode === 'grid' ? '#007AFF' : 'transparent',
+                            color: viewMode === 'grid' ? '#FFFFFF' : '#8E8E93'
+                        }}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
                     </button>
                 </div>
             </div>
 
-            {/* Task Filters */}
-            <div className="flex space-x-1.5">
-                {['All', 'Active', 'Halted', 'Stopped'].map((filter) => (
-                    <button
-                        key={filter}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 border"
-                        style={{ 
-                            backgroundColor: filter === 'All' ? '#007AFF' : '#0A0A0A',
-                            color: filter === 'All' ? '#FFFFFF' : '#8E8E93',
-                            borderColor: filter === 'All' ? '#007AFF' : '#1C1C1E'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (filter !== 'All') {
-                                e.target.style.backgroundColor = '#111111';
-                                e.target.style.borderColor = '#1C1C1E';
-                                e.target.style.color = '#E5E5E7';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (filter !== 'All') {
-                                e.target.style.backgroundColor = '#0A0A0A';
-                                e.target.style.borderColor = '#1C1C1E';
-                                e.target.style.color = '#8E8E93';
-                            }
-                        }}
-                    >
-                        {filter}
-                    </button>
-                ))}
-            </div>
-
             {/* Task Cards */}
-            <div className="space-y-3">
-                {tasks.map((task) => (
-                    <TaskCard
-                        key={task.id}
-                        query={task.query}
-                        status={task.status}
-                        onAction={(action) => handleTaskAction(task.id, action)}
-                    />
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+                {filteredTasks.map((task) => (
+                    <div key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                        <TaskCard
+                            query={task.query}
+                            status={task.status}
+                            onAction={(action) => handleTaskAction(task.id, action)}
+                            isClickable={true}
+                        />
+                    </div>
                 ))}
             </div>
 
@@ -173,6 +253,14 @@ const ActiveTasksPage = () => {
                         Create Task
                     </button>
                 </div>
+            )}
+
+            {/* Task Thread Modal */}
+            {selectedTask && (
+                <TaskThreadModal
+                    task={selectedTask}
+                    onClose={closeModal}
+                />
             )}
         </div>
     );

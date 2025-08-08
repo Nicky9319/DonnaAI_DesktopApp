@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import Sidebar from '../../common/components/Sidebar/Sidebar';
 import HomePage from '../../home/components/HomePage';
 import ActiveTasksPage from '../../tasks/components/ActiveTasksPage';
-import TaskThreadPage from '../../chat/components/TaskThreadPage';
+import ComingSoonPage from '../../settings/components/ComingSoonPage';
 
 // MainContent Component
 const MainContent = ({ activeTab }) => (
     <div className="flex-1 overflow-auto" style={{ backgroundColor: '#000000' }}>
         {activeTab === 'home' && <HomePage />}
         {activeTab === 'activeTasks' && <ActiveTasksPage />}
-        {activeTab === 'taskThread' && <TaskThreadPage />}
+        {activeTab === 'settings' && <ComingSoonPage />}
     </div>
 );
 

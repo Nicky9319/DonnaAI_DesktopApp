@@ -1,57 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ChatMessage from './ChatMessage';
 
-const ChatThread = ({ threads = [], messages = {} }) => {
-    const [selectedThread, setSelectedThread] = useState(threads[0]?.id || '');
-
+const ChatThread = ({ messages = [] }) => {
     return (
         <div className="h-full flex flex-col" style={{ backgroundColor: '#000000' }}>
-            {/* Thread Selector */}
-            <div className="mb-6 p-6 border-b" style={{ borderColor: '#1C1C1E' }}>
-                <label 
-                    className="block text-lg font-light mb-3"
-                    style={{ color: '#FFFFFF' }}
-                >
-                    Select Thread
-                </label>
-                <select
-                    className="w-full max-w-md p-3 rounded-xl text-sm transition-all duration-150 border focus:outline-none"
-                    style={{ 
-                        backgroundColor: '#111111',
-                        color: '#E5E5E7',
-                        borderColor: '#1C1C1E'
-                    }}
-                    value={selectedThread}
-                    onChange={(e) => setSelectedThread(e.target.value)}
-                    onFocus={(e) => {
-                        e.target.style.borderColor = '#007AFF';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 122, 255, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                        e.target.style.borderColor = '#1C1C1E';
-                        e.target.style.boxShadow = 'none';
-                    }}
-                >
-                    {threads.map(thread => (
-                        <option 
-                            key={thread.id} 
-                            value={thread.id}
-                            style={{ 
-                                backgroundColor: '#111111',
-                                color: '#E5E5E7'
-                            }}
-                        >
-                            {thread.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
-                {selectedThread && messages[selectedThread] ? (
-                    <div className="space-y-4">
-                        {messages[selectedThread].map((msg, index) => (
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+                {messages && messages.length > 0 ? (
+                    <div className="space-y-4 max-w-4xl mx-auto">
+                        {messages.map((msg, index) => (
                             <ChatMessage
                                 key={index}
                                 message={msg.text}

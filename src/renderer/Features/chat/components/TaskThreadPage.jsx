@@ -70,22 +70,26 @@ const messages = {
 };
 
 const TaskThreadPage = () => {
-    // Only show threads for tasks in the active task list
-    const threads = activeTasks.map(task => ({ id: task.threadId, name: task.name }));
+    // Simple default messages for demonstration
+    const defaultMessages = [
+        { sender: 'ai', text: 'Welcome to Task Threads! Click on any task from the Active Tasks page to start a conversation.' },
+        { sender: 'user', text: 'How do I get started?' },
+        { sender: 'ai', text: 'Simply go to the Active Tasks page and click on any task card to open its thread in a modal.' },
+    ];
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col" style={{ backgroundColor: '#000000' }}>
             {/* Header */}
-            <div className="mb-6">
+            <div className="p-6 border-b" style={{ borderColor: '#1C1C1E' }}>
                 <h1 
-                    className="text-3xl font-bold mb-2"
+                    className="text-2xl font-light tracking-tight mb-1"
                     style={{ color: '#FFFFFF' }}
                 >
                     Task Threads
                 </h1>
                 <p 
-                    className="text-lg"
-                    style={{ color: '#E0E0E0' }}
+                    className="text-sm"
+                    style={{ color: '#8E8E93' }}
                 >
                     Review conversations and task progress
                 </p>
@@ -93,52 +97,7 @@ const TaskThreadPage = () => {
 
             {/* Chat Interface */}
             <div className="flex-1">
-                <ChatThread 
-                    threads={threads}
-                    messages={messages}
-                />
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-6 flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                    <div 
-                        className="px-4 py-2 rounded-lg border"
-                        style={{ 
-                            backgroundColor: '#0D1B2A',
-                            borderColor: '#3A86FF/20',
-                            color: '#E0E0E0'
-                        }}
-                    >
-                        <span className="text-sm font-medium">
-                            {threads.length} Threads
-                        </span>
-                    </div>
-                    <div 
-                        className="px-4 py-2 rounded-lg border"
-                        style={{ 
-                            backgroundColor: '#0D1B2A',
-                            borderColor: '#3A86FF/20',
-                            color: '#E0E0E0'
-                        }}
-                    >
-                        <span className="text-sm font-medium">
-                            {threads.reduce((acc, t) => acc + (messages[t.id]?.length || 0), 0)} Messages
-                        </span>
-                    </div>
-                </div>
-                
-                <button
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    style={{ 
-                        backgroundColor: '#3A86FF',
-                        color: '#FFFFFF'
-                    }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#265DF2'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#3A86FF'}
-                >
-                    + New Thread
-                </button>
+                <ChatThread messages={defaultMessages} />
             </div>
         </div>
     );
