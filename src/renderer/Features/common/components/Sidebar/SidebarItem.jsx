@@ -4,7 +4,6 @@ const SidebarItem = ({ icon, label, isActive, onClick }) => {
     const handleClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('SidebarItem clicked:', label);
         if (onClick) {
             onClick();
         }
