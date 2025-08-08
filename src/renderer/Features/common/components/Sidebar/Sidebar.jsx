@@ -3,31 +3,14 @@ import SidebarItem from './SidebarItem';
 
 const Sidebar = ({ activeTab, setActiveTab }) => (
     <div 
-        className="w-16 h-screen flex flex-col items-center py-6" 
+        className="w-56 h-screen flex flex-col py-6 px-4" 
         style={{ 
             backgroundColor: '#000000',
             borderRight: '1px solid #1C1C1E'
         }}
     >
-        {/* Logo Section */}
-        <div className="mb-10">
-            <div 
-                className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-150"
-                style={{ 
-                    backgroundColor: '#007AFF'
-                }}
-            >
-                <span 
-                    className="font-semibold text-lg"
-                    style={{ color: '#FFFFFF' }}
-                >
-                    D
-                </span>
-            </div>
-        </div>
-        
-        {/* Navigation Items - Centered */}
-        <div className="flex flex-col space-y-4 flex-1 justify-center">
+        {/* Navigation Items */}
+        <div className="flex flex-col space-y-2 flex-1 pt-8">
             <SidebarItem
                 icon={
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
