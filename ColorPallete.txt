@@ -1,0 +1,15 @@
+Primary Background: #0D1B2A (current - keep)
+Secondary Background: #1A2332 (slightly lighter for cards/inputs)
+Surface: #2A3441 (for borders and subtle elements)
+
+Text Colors:
+- Primary: #FFFFFF (headings)
+- Secondary: #E0E0E0 (body text) 
+- Muted: #9CA3AF (descriptions, labels)
+
+Brand Colors:
+- Donna Green: #00D09C (keep - it's perfect)
+- Action Blue: #3A86FF (keep)
+- Success: #10B981 (modern green)
+- Warning: #F59E0B (modern amber)
+- Error: #EF4444 (modern red)
