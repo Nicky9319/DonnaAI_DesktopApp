@@ -3,7 +3,7 @@ import SidebarItem from './SidebarItem';
 
 const Sidebar = ({ activeTab, setActiveTab }) => (
     <div 
-        className="w-56 h-screen flex flex-col py-6 px-4" 
+        className="w-56 h-full flex flex-col py-6 px-4" 
         style={{ 
             backgroundColor: '#000000',
             borderRight: '1px solid #1C1C1E'
