@@ -9,8 +9,24 @@ const Sidebar = ({ activeTab, setActiveTab }) => (
             borderRight: '1px solid #1C1C1E'
         }}
     >
+        {/* Donna Introduction */}
+        <div className="mb-4 px-2">
+            <p 
+                className="text-sm font-medium leading-tight"
+                style={{ color: '#E5E5E7' }}
+            >
+                I'm <span style={{ color: '#007AFF' }}>Donna</span>
+            </p>
+            <p 
+                className="text-xs leading-tight"
+                style={{ color: '#8E8E93' }}
+            >
+                I know everything
+            </p>
+        </div>
+
         {/* Navigation Items */}
-        <div className="flex flex-col space-y-2 flex-1 pt-8">
+        <div className="flex flex-col space-y-2 flex-1">
             <SidebarItem
                 icon={
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
