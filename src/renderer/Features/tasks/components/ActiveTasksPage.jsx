@@ -36,38 +36,38 @@ const ActiveTasksPage = () => {
     };
 
     return (
-        <div className="min-h-full p-6 space-y-6" style={{ backgroundColor: '#000000' }}>
+        <div className="min-h-full p-4 space-y-4" style={{ backgroundColor: '#000000' }}>
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                     <h1 
-                        className="text-3xl font-light tracking-tight"
+                        className="text-2xl font-light tracking-tight"
                         style={{ color: '#FFFFFF' }}
                     >
                         Active Tasks
                     </h1>
                     <p 
-                        className="text-base font-light"
+                        className="text-sm font-light"
                         style={{ color: '#8E8E93' }}
                     >
                         Monitor and manage your ongoing tasks
                     </p>
                 </div>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                     <div 
-                        className="px-4 py-2 rounded-xl border"
+                        className="px-3 py-1.5 rounded-lg border"
                         style={{ 
                             backgroundColor: '#111111',
                             borderColor: '#1C1C1E',
                             color: '#E5E5E7'
                         }}
                     >
-                        <span className="text-sm font-medium">
+                        <span className="text-xs font-medium">
                             <span style={{ color: '#00D09C' }}>{tasks.filter(t => t.status === 'active').length}</span> Active
                         </span>
                     </div>
                     <button
-                        className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150"
                         style={{ 
                             backgroundColor: '#007AFF',
                             color: '#FFFFFF'
@@ -81,8 +81,8 @@ const ActiveTasksPage = () => {
                             e.target.style.transform = 'scale(1)';
                         }}
                     >
-                        <span className="flex items-center space-x-1.5">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span className="flex items-center space-x-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
                             <span>New Task</span>
@@ -92,11 +92,11 @@ const ActiveTasksPage = () => {
             </div>
 
             {/* Task Filters */}
-            <div className="flex space-x-2">
+            <div className="flex space-x-1.5">
                 {['All', 'Active', 'Halted', 'Stopped'].map((filter) => (
                     <button
                         key={filter}
-                        className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 border"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 border"
                         style={{ 
                             backgroundColor: filter === 'All' ? '#007AFF' : '#0A0A0A',
                             color: filter === 'All' ? '#FFFFFF' : '#8E8E93',
@@ -123,7 +123,7 @@ const ActiveTasksPage = () => {
             </div>
 
             {/* Task Cards */}
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {tasks.map((task) => (
                     <TaskCard
                         key={task.id}
