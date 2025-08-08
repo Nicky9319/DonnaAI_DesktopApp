@@ -68,7 +68,7 @@ const ActiveTasksPage = () => {
     return (
         <div className="min-h-full p-4 space-y-8" style={{ backgroundColor: '#000000' }}>
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pb-3">
                 <h1 
                     className="text-2xl font-light tracking-tight"
                     style={{ color: '#FFFFFF' }}
@@ -95,6 +95,7 @@ const ActiveTasksPage = () => {
                         </span>
                     </div>
 
+
                     {/* Halted Tasks Widget */}
                     <div 
                         className="flex items-center space-x-2 px-3 py-1.5 rounded-lg"
@@ -111,6 +112,7 @@ const ActiveTasksPage = () => {
                             <span className="ml-1">Halted</span>
                         </span>
                     </div>
+
 
                     {/* Stopped Tasks Widget */}
                     <div 
@@ -131,8 +133,9 @@ const ActiveTasksPage = () => {
                 </div>
             </div>
 
+
             {/* Task Filters and View Toggle */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div className="flex space-x-1.5">
                     {['All', 'Active', 'Halted', 'Stopped'].map((filter) => (
                         <button
@@ -193,8 +196,11 @@ const ActiveTasksPage = () => {
                 </div>
             </div>
 
+            {/* <br /> */}
+
+
             {/* Task Cards */}
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-30'}>
+            <div className={viewMode === 'grid' ? 'pt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-30 pt-5'}>
                 {filteredTasks.map((task) => (
                     <div key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
                         <TaskCard
@@ -203,7 +209,7 @@ const ActiveTasksPage = () => {
                             status={task.status}
                             isClickable={true}
                         />
-                        {viewMode != 'grid' && <br />}
+                        {viewMode != 'grid' && <div className="pb-6"/>}
                     </div>
                      
                      
