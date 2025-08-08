@@ -69,26 +69,18 @@ const ActiveTasksPage = () => {
         <div className="min-h-full p-4 space-y-8" style={{ backgroundColor: '#000000' }}>
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                    <h1 
-                        className="text-2xl font-light tracking-tight"
-                        style={{ color: '#FFFFFF' }}
-                    >
-                        Active Tasks
-                    </h1>
-                    <br />
-                    <p 
-                        className="text-sm font-light"
-                        style={{ color: '#8E8E93' }}
-                    >
-                        Monitor and manage your ongoing tasks
-                    </p>
-                </div>
+                <h1 
+                    className="text-2xl font-light tracking-tight"
+                    style={{ color: '#FFFFFF' }}
+                >
+                    Active Tasks
+                </h1>
+                
                 {/* Task Statistics Widgets */}
-                <div className="flex items-center space-x-5">
+                <div className="flex items-center space-x-4">
                     {/* Active Tasks Widget */}
                     <div 
-                        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg"
+                        className="flex items-center space-x-2 px-3 py-1.5 rounded-lg"
                         style={{ 
                             backgroundColor: '#111111',
                             border: '1px solid #1C1C1E'
@@ -105,7 +97,7 @@ const ActiveTasksPage = () => {
 
                     {/* Halted Tasks Widget */}
                     <div 
-                        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg"
+                        className="flex items-center space-x-2 px-3 py-1.5 rounded-lg"
                         style={{ 
                             backgroundColor: '#111111',
                             border: '1px solid #1C1C1E'
@@ -122,7 +114,7 @@ const ActiveTasksPage = () => {
 
                     {/* Stopped Tasks Widget */}
                     <div 
-                        className="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg"
+                        className="flex items-center space-x-2 px-3 py-1.5 rounded-lg"
                         style={{ 
                             backgroundColor: '#111111',
                             border: '1px solid #1C1C1E'
