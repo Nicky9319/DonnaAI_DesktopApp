@@ -24,6 +24,12 @@ if (process.contextIsolated) {
       initDb: () => dbApi.initDb ? dbApi.initDb() : Promise.reject('db not loaded'),
     });
 
+    contextBridge.exposeInMainWorld('electronAPI', {
+      closeApp: () => ipcRenderer.invoke('window:close'),
+      minimizeApp: () => ipcRenderer.invoke('window:minimize'),
+      maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+    });
+
   }
   catch (error) {
     console.error(error)
@@ -36,5 +42,10 @@ else{
     getAgentsInfo: () => dbApi.getAgentsInfo ? dbApi.getAgentsInfo() : Promise.reject('db not loaded'),
     addAgentInfo: (agent) => dbApi.addAgentInfo ? dbApi.addAgentInfo(agent) : Promise.reject('db not loaded'),
     initDb: () => dbApi.initDb ? dbApi.initDb() : Promise.reject('db not loaded'),
+  }
+  window.electronAPI = {
+    closeApp: () => ipcRenderer.invoke('window:close'),
+    minimizeApp: () => ipcRenderer.invoke('window:minimize'),
+    maximizeApp: () => ipcRenderer.invoke('window:maximize'),
   }
 }

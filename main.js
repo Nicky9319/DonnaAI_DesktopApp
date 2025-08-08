@@ -127,6 +127,29 @@ ipcMain.handle('db:updateAgentEnv', async (event, agentId, varName, varValue) =>
   return await updateAgentEnvVariable(agentId, varName, varValue);
 });
 
+// Custom titlebar handlers
+ipcMain.handle('window:close', () => {
+  if (mainWindow) {
+    mainWindow.close();
+  }
+});
+
+ipcMain.handle('window:minimize', () => {
+  if (mainWindow) {
+    mainWindow.minimize();
+  }
+});
+
+ipcMain.handle('window:maximize', () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
 
 // IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
 
@@ -779,6 +802,7 @@ app.whenReady().then(async () => {
     width: 1200,
     height: 800,
     show: false,
+    frame: false, // Remove default titlebar
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
