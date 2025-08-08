@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Sidebar from '../../components/common/Sidebar/Sidebar';
-import HomePage from '../../features/home/HomePage';
-import ActiveTasksPage from '../../features/tasks/ActiveTasksPage';
-import TaskThreadPage from '../../features/chat/TaskThreadPage';
+import Sidebar from '../../common/components/Sidebar/Sidebar';
+import HomePage from '../../home/components/HomePage';
+import ActiveTasksPage from '../../tasks/components/ActiveTasksPage';
+import TaskThreadPage from '../../chat/components/TaskThreadPage';
 
 // MainContent Component
 const MainContent = ({ activeTab }) => (

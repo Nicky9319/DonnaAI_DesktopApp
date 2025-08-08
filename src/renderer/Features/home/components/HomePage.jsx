@@ -1,5 +1,5 @@
 import React from 'react';
-import EnvVarsEditor from '../../components/settings/EnvVarsEditor';
+import EnvVarsEditor from '../../settings/components/EnvVarsEditor';
 
 const HomePage = () => {
     const defaultEnvVars = {

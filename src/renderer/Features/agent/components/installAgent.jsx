@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { AgentInstallContext } from '../../context/AgentInstallContext.jsx';
+import { AgentInstallContext } from '../../common/components/AgentInstallContext.jsx';
 
 const serverIp = import.meta.env.VITE_SERVER_IP_ADDRESS;
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import ChatThread from '../../components/chat/ChatThread';
+import ChatThread from './ChatThread';
 
 // Use the same tasks as in ActiveTasksPage
 const activeTasks = [

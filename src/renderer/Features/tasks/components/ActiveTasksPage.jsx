@@ -1,5 +1,5 @@
 import React from 'react';
-import TaskCard from '../../components/tasks/TaskCard';
+import TaskCard from './TaskCard';
 
 const ActiveTasksPage = () => {
     const tasks = [
