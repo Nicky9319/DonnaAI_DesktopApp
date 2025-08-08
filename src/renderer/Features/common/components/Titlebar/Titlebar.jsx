@@ -54,8 +54,8 @@ const Titlebar = () => {
                 </button>
             </div>
 
-            {/* Center - App Title (optional) */}
-            <div className="flex-1 text-center">
+            {/* Center - App Title */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
                 <span 
                     className="text-xs font-medium"
                     style={{ color: '#8E8E93' }}
