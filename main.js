@@ -150,6 +150,41 @@ ipcMain.handle('window:maximize', () => {
   }
 });
 
+// Widget window handlers
+ipcMain.handle('widget:close', () => {
+  if (widgetWindow) {
+    widgetWindow.close();
+  }
+});
+
+ipcMain.handle('widget:minimize', () => {
+  if (widgetWindow) {
+    widgetWindow.minimize();
+  }
+});
+
+ipcMain.handle('widget:maximize', () => {
+  if (widgetWindow) {
+    if (widgetWindow.isMaximized()) {
+      widgetWindow.unmaximize();
+    } else {
+      widgetWindow.maximize();
+    }
+  }
+});
+
+ipcMain.handle('widget:show', () => {
+  if (widgetWindow) {
+    widgetWindow.show();
+  }
+});
+
+ipcMain.handle('widget:hide', () => {
+  if (widgetWindow) {
+    widgetWindow.hide();
+  }
+});
+
 
 // IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
 
@@ -801,7 +836,6 @@ app.whenReady().then(async () => {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: false,
     frame: false, // Remove default titlebar
     autoHideMenuBar: true,
     webPreferences: {
@@ -809,8 +843,15 @@ app.whenReady().then(async () => {
       sandbox: false,
       contextIsolation: true,
       devTools: true,
-    }
+    },
+    alwaysOnTop: false,
+    resizable: false,
+    transparent: true,
+    skipTaskbar: false,
+
   })
+
+  // mainWindow.setAlwaysOnTop(true, 'screen-saver')
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -837,6 +878,52 @@ app.whenReady().then(async () => {
       });
     }
   }
+
+
+
+  let widgetWindow;
+
+function createWidgetWindow() {
+  widgetWindow = new BrowserWindow({
+    width: 100,
+    height: 100,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: true,
+    transparent: true,
+          webPreferences: {
+        preload: join(__dirname, '../preload/preload.js'),
+        sandbox: false,
+        contextIsolation: true,
+        devTools: true,
+        nodeIntegration: false,
+      }
+  });
+
+    // Load the widget window with proper React support
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    // In development, load the widget from the same dev server but with a query parameter
+    const baseUrl = process.env['ELECTRON_RENDERER_URL'];
+    const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
+    console.log('Widget URL:', widgetUrl);
+    console.log('Original URL:', process.env['ELECTRON_RENDERER_URL']);
+    widgetWindow.loadURL(widgetUrl);
+  } else {
+    widgetWindow.loadFile(join(__dirname, '../widget/index.html'))
+  }
+
+  widgetWindow.setMenuBarVisibility(false);
+  
+  // Position the widget at the top of the screen
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width } = primaryDisplay.workAreaSize;
+  
+  widgetWindow.setPosition(20, 20);
+}
+
+createWidgetWindow();
 
 
 });

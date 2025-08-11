@@ -30,6 +30,14 @@ if (process.contextIsolated) {
       maximizeApp: () => ipcRenderer.invoke('window:maximize'),
     });
 
+    contextBridge.exposeInMainWorld('widgetAPI', {
+      closeWidget: () => ipcRenderer.invoke('widget:close'),
+      minimizeWidget: () => ipcRenderer.invoke('widget:minimize'),
+      maximizeWidget: () => ipcRenderer.invoke('widget:maximize'),
+      showWidget: () => ipcRenderer.invoke('widget:show'),
+      hideWidget: () => ipcRenderer.invoke('widget:hide'),
+    });
+
   }
   catch (error) {
     console.error(error)
@@ -47,5 +55,12 @@ else{
     closeApp: () => ipcRenderer.invoke('window:close'),
     minimizeApp: () => ipcRenderer.invoke('window:minimize'),
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+  }
+  window.widgetAPI = {
+    closeWidget: () => ipcRenderer.invoke('widget:close'),
+    minimizeWidget: () => ipcRenderer.invoke('widget:minimize'),
+    maximizeWidget: () => ipcRenderer.invoke('widget:maximize'),
+    showWidget: () => ipcRenderer.invoke('widget:show'),
+    hideWidget: () => ipcRenderer.invoke('widget:hide'),
   }
 }

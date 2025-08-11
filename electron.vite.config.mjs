@@ -24,9 +24,23 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
-        '@renderer': resolve('src')
+        '@renderer': resolve(__dirname, 'src'),
+        '@widget': resolve(__dirname, 'src/widget')
       }
     },
-    plugins: [tailwindcss(), react()]
+    plugins: [tailwindcss(), react()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/renderer/index.html')
+        }
+      }
+    },
+    server: {
+      port: 5173,
+      fs: {
+        allow: [resolve(__dirname, 'src')]
+      }
+    }
   }
 })
