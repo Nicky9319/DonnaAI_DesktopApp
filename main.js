@@ -185,6 +185,12 @@ ipcMain.handle('widget:hide', () => {
   }
 });
 
+ipcMain.handle('widget:setIgnoreMouseEvents', (event, ignore, options) => {
+  if (widgetWindow) {
+    widgetWindow.setIgnoreMouseEvents(ignore, options);
+  }
+});
+
 
 // IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
 
@@ -885,20 +891,46 @@ app.whenReady().then(async () => {
 
 function createWidgetWindow() {
   widgetWindow = new BrowserWindow({
-    width: 100,
-    height: 100,
+    width: 1920,
+    height: 1080,
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
-    resizable: true,
+    resizable: false,
     transparent: true,
-          webPreferences: {
-        preload: join(__dirname, '../preload/preload.js'),
-        sandbox: false,
-        contextIsolation: true,
-        devTools: true,
-        nodeIntegration: false,
-      }
+    hasShadow: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/preload.js'),
+      sandbox: false,
+      contextIsolation: true,
+      devTools: true,
+      nodeIntegration: false,
+    }
+  });
+
+  // Enable click-through for transparent areas
+  widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+  
+  // Listen for mouse events to enable/disable click-through dynamically
+  widgetWindow.webContents.on('dom-ready', () => {
+    widgetWindow.webContents.executeJavaScript(`
+      // Function to enable click-through
+      window.enableClickThrough = () => {
+        if (window.electronAPI) {
+          window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+        }
+      };
+      
+      // Function to disable click-through
+      window.disableClickThrough = () => {
+        if (window.electronAPI) {
+          window.electronAPI.setIgnoreMouseEvents(false);
+        }
+      };
+      
+      // Enable click-through by default
+      window.enableClickThrough();
+    `);
   });
 
     // Load the widget window with proper React support
@@ -915,12 +947,14 @@ function createWidgetWindow() {
 
   widgetWindow.setMenuBarVisibility(false);
   
-  // Position the widget at the top of the screen
+  // Position the widget to cover the full screen for unlimited dragging
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
-  const { width } = primaryDisplay.workAreaSize;
+  const { width, height } = primaryDisplay.workAreaSize;
   
-  widgetWindow.setPosition(20, 20);
+  // Position widget to cover the full screen area
+  widgetWindow.setPosition(0, 0);
+  widgetWindow.setSize(width, height);
 }
 
 createWidgetWindow();

@@ -38,6 +38,13 @@ if (process.contextIsolated) {
       hideWidget: () => ipcRenderer.invoke('widget:hide'),
     });
 
+    contextBridge.exposeInMainWorld('electronAPI', {
+      closeApp: () => ipcRenderer.invoke('window:close'),
+      minimizeApp: () => ipcRenderer.invoke('window:minimize'),
+      maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+      setIgnoreMouseEvents: (ignore, options) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore, options),
+    });
+
   }
   catch (error) {
     console.error(error)

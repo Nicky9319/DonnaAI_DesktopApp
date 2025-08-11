@@ -9,10 +9,21 @@ body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none; /* Make the entire body click-through by default */
 }
 
 #root {
   width: 100%;
   height: 100%;
   background: transparent;
+  pointer-events: none; /* Make the root click-through by default */
+}
+
+/* Enable pointer events only for actual widget elements */
+.widget-button,
+.widget-controls,
+.widget-expanded,
+.widget-modal,
+.widget-overlay {
+  pointer-events: auto;
 }
