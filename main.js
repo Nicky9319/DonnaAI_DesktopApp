@@ -234,7 +234,14 @@ ipcMain.handle('widget:hide', () => {
 ipcMain.handle('widget:setIgnoreMouseEvents', (event, ignore, options) => {
   try {
     if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetWindow.setIgnoreMouseEvents(ignore, options);
+      // Handle the options parameter safely
+      if (ignore) {
+        // When enabling click-through, use forward: true
+        widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      } else {
+        // When disabling click-through, just pass false
+        widgetWindow.setIgnoreMouseEvents(false);
+      }
       return true;
     } else {
       console.log('Widget window is not available or already destroyed');
@@ -968,8 +975,8 @@ function createWidgetWindow() {
   }
 
   widgetWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1920,
+    height: 1080,
     frame: false,
     // alwaysOnTop: true, // Removed as per request
     skipTaskbar: false,
@@ -977,6 +984,7 @@ function createWidgetWindow() {
     transparent: true,
     hasShadow: false,
     show: false, // Don't show until ready
+    fullscreen: true,
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       sandbox: false,

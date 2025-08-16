@@ -30,7 +30,7 @@ if (process.contextIsolated) {
       maximizeApp: () => ipcRenderer.invoke('window:maximize'),
       enableInteraction: () => ipcRenderer.invoke('window:enableInteraction'),
       disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
-      setIgnoreMouseEvents: (ignore, options) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore, options),
+      setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {
@@ -63,7 +63,7 @@ else{
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
     enableInteraction: () => ipcRenderer.invoke('window:enableInteraction'),
     disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
-    setIgnoreMouseEvents: (ignore, options) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore, options),
+          setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
   }
   window.widgetAPI = {
     closeWidget: () => ipcRenderer.invoke('widget:close'),

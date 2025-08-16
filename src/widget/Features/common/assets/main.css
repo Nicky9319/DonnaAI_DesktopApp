@@ -1,4 +1,18 @@
 /* App base CSS (restored) */
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; width: 100%; margin: 0; }
+html, body, #root { 
+  height: 100%; 
+  width: 100%; 
+  margin: 0; 
+  background: transparent !important;
+}
+
+body {
+  background: transparent !important;
+  overflow: hidden;
+}
+
+#root {
+  background: transparent !important;
+}

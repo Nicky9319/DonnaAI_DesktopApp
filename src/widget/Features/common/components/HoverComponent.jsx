@@ -11,14 +11,24 @@ const HoverComponent = ({ children, className, style }) => {
 
 	const enableInteraction = () => {
 		try {
-			window.electronAPI?.enableInteraction?.()
-		} catch {}
+			// For widget window, use setIgnoreMouseEvents directly
+			if (window.electronAPI?.setIgnoreMouseEvents) {
+				window.electronAPI.setIgnoreMouseEvents(false);
+			}
+		} catch (error) {
+			console.error('Error enabling interaction:', error);
+		}
 	}
 
 	const disableInteraction = () => {
 		try {
-			window.electronAPI?.disableInteraction?.()
-		} catch {}
+			// For widget window, use setIgnoreMouseEvents directly
+			if (window.electronAPI?.setIgnoreMouseEvents) {
+				window.electronAPI.setIgnoreMouseEvents(true);
+			}
+		} catch (error) {
+			console.error('Error disabling interaction:', error);
+		}
 	}
 
 	useEffect(() => {
