@@ -37,7 +37,7 @@ import { execSync } from 'child_process';
 
 // Variables and constants !!! ---------------------------------------------------------------------------------------------------
 
-let mainWindow, store;
+let mainWindow, store, widgetWindow;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 
 log.transports.file.level = 'info';
@@ -152,42 +152,116 @@ ipcMain.handle('window:maximize', () => {
 
 // Widget window handlers
 ipcMain.handle('widget:close', () => {
-  if (widgetWindow) {
-    widgetWindow.close();
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.close();
+      return true;
+    } else {
+      console.log('Widget window is not available or already destroyed');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error closing widget window:', error);
+    return false;
   }
 });
 
 ipcMain.handle('widget:minimize', () => {
-  if (widgetWindow) {
-    widgetWindow.minimize();
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.minimize();
+      return true;
+    } else {
+      console.log('Widget window is not available or already destroyed');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error minimizing widget window:', error);
+    return false;
   }
 });
 
 ipcMain.handle('widget:maximize', () => {
-  if (widgetWindow) {
-    if (widgetWindow.isMaximized()) {
-      widgetWindow.unmaximize();
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      if (widgetWindow.isMaximized()) {
+        widgetWindow.unmaximize();
+      } else {
+        widgetWindow.maximize();
+      }
+      return true;
     } else {
-      widgetWindow.maximize();
+      console.log('Widget window is not available or already destroyed');
+      return false;
     }
+  } catch (error) {
+    console.error('Error maximizing widget window:', error);
+    return false;
   }
 });
 
 ipcMain.handle('widget:show', () => {
-  if (widgetWindow) {
-    widgetWindow.show();
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.show();
+      return true;
+    } else {
+      console.log('Widget window is not available or already destroyed, creating new one');
+      createWidgetWindow();
+      return true;
+    }
+  } catch (error) {
+    console.error('Error showing widget window:', error);
+    return false;
   }
 });
 
 ipcMain.handle('widget:hide', () => {
-  if (widgetWindow) {
-    widgetWindow.hide();
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.hide();
+      return true;
+    } else {
+      console.log('Widget window is not available or already destroyed');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error hiding widget window:', error);
+    return false;
   }
 });
 
 ipcMain.handle('widget:setIgnoreMouseEvents', (event, ignore, options) => {
-  if (widgetWindow) {
-    widgetWindow.setIgnoreMouseEvents(ignore, options);
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.setIgnoreMouseEvents(ignore, options);
+      return true;
+    } else {
+      console.log('Widget window is not available or already destroyed');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error setting ignore mouse events:', error);
+    return false;
+  }
+});
+
+// Click-through control handlers for main window
+ipcMain.handle('window:setClickThrough', (event, clickThrough) => {
+  if (mainWindow) {
+    mainWindow.setIgnoreMouseEvents(clickThrough, { forward: true });
+  }
+});
+
+ipcMain.handle('window:enableInteraction', () => {
+  if (mainWindow) {
+    mainWindow.setIgnoreMouseEvents(false);
+  }
+});
+
+ipcMain.handle('window:disableInteraction', () => {
+  if (mainWindow) {
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
   }
 });
 
@@ -842,6 +916,7 @@ app.whenReady().then(async () => {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false,
     frame: false, // Remove default titlebar
     autoHideMenuBar: true,
     webPreferences: {
@@ -850,17 +925,14 @@ app.whenReady().then(async () => {
       contextIsolation: true,
       devTools: true,
     },
-    alwaysOnTop: false,
-    resizable: false,
-    transparent: true,
-    skipTaskbar: false,
-
   })
 
   // mainWindow.setAlwaysOnTop(true, 'screen-saver')
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    // Main window should NOT have click-through enabled
+    // mainWindow.setIgnoreMouseEvents(true, { forward: true });
   })
 
 
@@ -887,18 +959,24 @@ app.whenReady().then(async () => {
 
 
 
-  let widgetWindow;
-
 function createWidgetWindow() {
+  // Check if widget window already exists and is not destroyed
+  if (widgetWindow && !widgetWindow.isDestroyed()) {
+    console.log('Widget window already exists, focusing it');
+    widgetWindow.focus();
+    return;
+  }
+
   widgetWindow = new BrowserWindow({
-    width: 1920,
-    height: 1080,
+    width: 1200,
+    height: 800,
     frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
+    // alwaysOnTop: true, // Removed as per request
+    skipTaskbar: false,
     resizable: false,
     transparent: true,
     hasShadow: false,
+    show: false, // Don't show until ready
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       sandbox: false,
@@ -908,63 +986,216 @@ function createWidgetWindow() {
     }
   });
 
-  // Enable click-through for transparent areas
-  widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-  
+  // Widget window event handlers
+  widgetWindow.on('ready-to-show', () => {
+    console.log('Widget window ready to show');
+    widgetWindow.show();
+    // Start with click-through enabled for transparent areas
+    widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+  });
+
+  widgetWindow.on('closed', () => {
+    console.log('Widget window closed');
+    widgetWindow = null;
+  });
+
+  widgetWindow.on('error', (error) => {
+    console.error('Widget window error:', error);
+  });
+
   // Listen for mouse events to enable/disable click-through dynamically
   widgetWindow.webContents.on('dom-ready', () => {
     widgetWindow.webContents.executeJavaScript(`
-      // Function to enable click-through
+      // Track click-through state
+      window.isClickThroughEnabled = false;
+      
+      // Function to enable click-through (make window transparent to clicks)
       window.enableClickThrough = () => {
         if (window.electronAPI) {
           window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+          window.isClickThroughEnabled = true;
+          console.log('Click-through enabled');
         }
       };
       
-      // Function to disable click-through
+      // Function to disable click-through (make window interactive)
       window.disableClickThrough = () => {
         if (window.electronAPI) {
           window.electronAPI.setIgnoreMouseEvents(false);
+          window.isClickThroughEnabled = false;
+          console.log('Click-through disabled - widget is now interactive');
         }
       };
       
-      // Enable click-through by default
+      // Function to toggle click-through
+      window.toggleClickThrough = () => {
+        if (window.isClickThroughEnabled) {
+          window.disableClickThrough();
+        } else {
+          window.enableClickThrough();
+        }
+      };
+      
+      // Function to check if element is transparent/empty
+      function isTransparentElement(element) {
+        if (!element) return true;
+        
+        // Check if element is body or html (transparent areas)
+        if (element.tagName === 'BODY' || element.tagName === 'HTML') {
+          return true;
+        }
+        
+        // Check computed styles
+        const styles = window.getComputedStyle(element);
+        const backgroundColor = styles.backgroundColor;
+        const opacity = styles.opacity;
+        
+        // Check if background is transparent
+        if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
+          return true;
+        }
+        
+        // Check if opacity is very low
+        if (parseFloat(opacity) < 0.1) {
+          return true;
+        }
+        
+        // Check if element has no content and no background
+        if (!element.textContent && !element.children.length && backgroundColor === 'rgba(0, 0, 0, 0)') {
+          return true;
+        }
+        
+        return false;
+      }
+      
+      // Start with click-through enabled for transparent areas
       window.enableClickThrough();
+      
+      // Handle mouse events to dynamically enable/disable click-through
+      document.addEventListener('mouseover', (event) => {
+        const target = event.target;
+        console.log('Mouse over:', target.tagName, target.className);
+        
+        // If hovering over a non-transparent element, disable click-through
+        if (!isTransparentElement(target)) {
+          window.disableClickThrough();
+        }
+      });
+      
+      document.addEventListener('mouseout', (event) => {
+        const target = event.target;
+        const relatedTarget = event.relatedTarget;
+        
+        // If mouse is leaving to a transparent area, enable click-through
+        if (isTransparentElement(relatedTarget) || !relatedTarget) {
+          console.log('Mouse leaving to transparent area, enabling click-through');
+          window.enableClickThrough();
+        }
+      });
+      
+      // Handle clicks - only prevent default if clicking on non-transparent elements
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        console.log('Click detected on:', target.tagName, target.className);
+        
+        if (!isTransparentElement(target)) {
+          // This is a click on actual content, prevent it from passing through
+          event.stopPropagation();
+          console.log('Click on content - preventing pass-through');
+        } else {
+          // This is a click on transparent area, let it pass through
+          console.log('Click on transparent area - allowing pass-through');
+          // Don't prevent default or stop propagation
+        }
+      });
+      
+      // Handle mousedown events
+      document.addEventListener('mousedown', (event) => {
+        const target = event.target;
+        
+        if (!isTransparentElement(target)) {
+          // Prevent mousedown from passing through on content
+          event.stopPropagation();
+          console.log('Mouse down on content - preventing pass-through');
+        }
+      });
+      
+      // Add a way to manually control click-through for specific areas
+      window.setClickThroughForElement = (element, enable) => {
+        if (enable) {
+          element.style.pointerEvents = 'none';
+        } else {
+          element.style.pointerEvents = 'auto';
+        }
+      };
     `);
   });
 
-    // Load the widget window with proper React support
+  // Load the widget window with proper React support
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     // In development, load the widget from the same dev server but with a query parameter
     const baseUrl = process.env['ELECTRON_RENDERER_URL'];
     const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
     console.log('Widget URL:', widgetUrl);
     console.log('Original URL:', process.env['ELECTRON_RENDERER_URL']);
-    widgetWindow.loadURL(widgetUrl);
+    widgetWindow.loadURL(widgetUrl).catch((error) => {
+      console.error('Failed to load widget URL:', error);
+    });
   } else {
-    widgetWindow.loadFile(join(__dirname, '../widget/index.html'))
+    widgetWindow.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
+      console.error('Failed to load widget file:', error);
+    });
   }
 
   widgetWindow.setMenuBarVisibility(false);
   
-  // Position the widget to cover the full screen for unlimited dragging
-  const { screen } = require('electron');
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-  
-  // Position widget to cover the full screen area
+  // Position the widget window at (0, 0) with size 1200x800
   widgetWindow.setPosition(0, 0);
-  widgetWindow.setSize(width, height);
+  widgetWindow.setSize(1200, 800);
 }
 
 createWidgetWindow();
 
+// Function to safely recreate widget window
+function recreateWidgetWindow() {
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.close();
+    }
+    setTimeout(() => {
+      createWidgetWindow();
+    }, 100);
+  } catch (error) {
+    console.error('Error recreating widget window:', error);
+  }
+}
+
+// Add IPC handler for recreating widget window
+ipcMain.handle('widget:recreate', () => {
+  try {
+    recreateWidgetWindow();
+    return true;
+  } catch (error) {
+    console.error('Error in widget:recreate handler:', error);
+    return false;
+  }
+});
 
 });
 
 app.on('will-quit' , async (event) => {
   event.preventDefault();
   console.log("Quitting The Application !!!");
+
+  // Clean up widget window
+  if (widgetWindow && !widgetWindow.isDestroyed()) {
+    try {
+      widgetWindow.close();
+      widgetWindow = null;
+    } catch (error) {
+      console.error('Error closing widget window during quit:', error);
+    }
+  }
 
   globalShortcut.unregisterAll();
   app.exit(0);

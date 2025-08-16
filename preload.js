@@ -28,6 +28,9 @@ if (process.contextIsolated) {
       closeApp: () => ipcRenderer.invoke('window:close'),
       minimizeApp: () => ipcRenderer.invoke('window:minimize'),
       maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+      enableInteraction: () => ipcRenderer.invoke('window:enableInteraction'),
+      disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
+      setIgnoreMouseEvents: (ignore, options) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore, options),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {
@@ -36,13 +39,9 @@ if (process.contextIsolated) {
       maximizeWidget: () => ipcRenderer.invoke('widget:maximize'),
       showWidget: () => ipcRenderer.invoke('widget:show'),
       hideWidget: () => ipcRenderer.invoke('widget:hide'),
-    });
-
-    contextBridge.exposeInMainWorld('electronAPI', {
-      closeApp: () => ipcRenderer.invoke('window:close'),
-      minimizeApp: () => ipcRenderer.invoke('window:minimize'),
-      maximizeApp: () => ipcRenderer.invoke('window:maximize'),
-      setIgnoreMouseEvents: (ignore, options) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore, options),
+      recreateWidget: () => ipcRenderer.invoke('widget:recreate'),
+      enableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', true, { forward: true }),
+      disableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', false),
     });
 
   }
@@ -62,6 +61,9 @@ else{
     closeApp: () => ipcRenderer.invoke('window:close'),
     minimizeApp: () => ipcRenderer.invoke('window:minimize'),
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+    enableInteraction: () => ipcRenderer.invoke('window:enableInteraction'),
+    disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
+    setIgnoreMouseEvents: (ignore, options) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore, options),
   }
   window.widgetAPI = {
     closeWidget: () => ipcRenderer.invoke('widget:close'),
@@ -69,5 +71,8 @@ else{
     maximizeWidget: () => ipcRenderer.invoke('widget:maximize'),
     showWidget: () => ipcRenderer.invoke('widget:show'),
     hideWidget: () => ipcRenderer.invoke('widget:hide'),
+    recreateWidget: () => ipcRenderer.invoke('widget:recreate'),
+    enableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', true, { forward: true }),
+    disableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', false),
   }
 }
