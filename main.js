@@ -253,6 +253,8 @@ ipcMain.handle('widget:setIgnoreMouseEvents', (event, ignore, options) => {
   }
 });
 
+
+
 // Click-through control handlers for main window
 ipcMain.handle('window:setClickThrough', (event, clickThrough) => {
   if (mainWindow) {
@@ -901,6 +903,27 @@ app.whenReady().then(async () => {
     console.log('F5 is disabled');
   });
 
+  // Widget toggle shortcut (Ctrl + `)
+  globalShortcut.register('CommandOrControl+`', () => {
+    console.log('Widget toggle shortcut pressed');
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      if (widgetWindow.isVisible()) {
+        widgetWindow.hide();
+        console.log('Widget hidden');
+      } else {
+        widgetWindow.show();
+        // Ensure click-through is maintained when showing
+        setTimeout(() => {
+          widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+        }, 100);
+        console.log('Widget shown');
+      }
+    } else {
+      // If widget window doesn't exist, create it
+      createWidgetWindow();
+    }
+  });
+
   // Initialize DB 
   try{ initDb()}
   catch (error) { console.error('Failed to initialize database:', error); }
@@ -978,7 +1001,7 @@ function createWidgetWindow() {
     width: 1920,
     height: 1080,
     frame: false,
-    // alwaysOnTop: true, // Removed as per request
+    alwaysOnTop: true,
     skipTaskbar: false,
     resizable: false,
     transparent: true,
@@ -997,8 +1020,15 @@ function createWidgetWindow() {
   // Widget window event handlers
   widgetWindow.on('ready-to-show', () => {
     console.log('Widget window ready to show');
-    widgetWindow.show();
+    // Start hidden by default - will be shown via shortcut
+    widgetWindow.hide();
     // Start with click-through enabled for transparent areas
+    widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+  });
+
+  // Ensure click-through stays enabled
+  widgetWindow.on('show', () => {
+    console.log('Widget window shown, ensuring click-through');
     widgetWindow.setIgnoreMouseEvents(true, { forward: true });
   });
 

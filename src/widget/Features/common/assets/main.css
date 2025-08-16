@@ -16,3 +16,46 @@ body {
 #root {
   background: transparent !important;
 }
+
+/* Aurora animations */
+@keyframes auroraGlow {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes particleFall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(30px) translateX(-10px) scale(1);
+  }
+  40% {
+    opacity: 0.8;
+    transform: translateY(80px) translateX(15px) scale(1.2);
+  }
+  60% {
+    opacity: 0.6;
+    transform: translateY(140px) translateX(-5px) scale(0.8);
+  }
+  80% {
+    opacity: 0.3;
+    transform: translateY(200px) translateX(10px) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(280px) translateX(0) scale(0.3);
+  }
+}
