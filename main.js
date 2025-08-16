@@ -1002,8 +1002,9 @@ function createWidgetWindow() {
     height: 1080,
     frame: false,
     alwaysOnTop: true,
-    skipTaskbar: false,
+    skipTaskbar: true,
     resizable: false,
+    alwaysOnTop: true,
     transparent: true,
     hasShadow: false,
     show: false, // Don't show until ready

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import HoverComponent from '../../common/components/HoverComponent';
+import HorizontalBar from './HorizontalBar';
+import DropdownModal from './DropdownModal';
 
 const DraggableWidget = () => {
   const [position, setPosition] = useState({ x: window.innerWidth - 80, y: 20 });
@@ -7,6 +9,12 @@ const DraggableWidget = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [showAurora, setShowAurora] = useState(false);
+  const [isBarOpen, setIsBarOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState('');
+  const [isClicked, setIsClicked] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownType, setDropdownType] = useState('');
   const widgetRef = useRef(null);
 
   const handleMouseDown = (e) => {
@@ -40,10 +48,45 @@ const DraggableWidget = () => {
   };
 
   const handleClick = () => {
-    setShowAurora(true);
+    setIsClicked(true);
+    setIsBarOpen(true);
+    setTimeout(() => setIsClicked(false), 200);
+  };
+
+  const handleCloseBar = () => {
+    setIsBarOpen(false);
+  };
+
+  const handleTypeSomething = () => {
+    setShowDropdown(true);
+    setDropdownType('type');
+    // Focus the textarea after a short delay to ensure the dropdown is rendered
     setTimeout(() => {
-      setShowAurora(false);
-    }, 3000);
+      const textarea = document.querySelector('.dropdown-textarea');
+      if (textarea) {
+        textarea.focus();
+      }
+    }, 100);
+  };
+
+  const handleOpenThread = () => {
+    setShowDropdown(true);
+    setDropdownType('thread');
+    // Focus the textarea after a short delay to ensure the dropdown is rendered
+    setTimeout(() => {
+      const textarea = document.querySelector('.dropdown-textarea');
+      if (textarea) {
+        textarea.focus();
+      }
+    }, 100);
+  };
+
+  const handleCloseDropdown = () => {
+    setShowDropdown(false);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   // Add global mouse event listeners for dragging
@@ -99,33 +142,55 @@ const DraggableWidget = () => {
           }}
           onMouseDown={handleMouseDown}
         >
-          {/* Black outer cover */}
-          <div style={{
-            width: '50px',
-            height: '50px',
-            backgroundColor: '#000',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-            border: '2px solid #333'
-          }}>
-            {/* Blue inner circle */}
-            <div 
-              style={{
-                width: '35px',
-                height: '35px',
-                backgroundColor: '#007bff',
-                borderRadius: '50%',
-                cursor: 'pointer'
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClick();
-              }}
-            />
-          </div>
+                     {/* Black outer cover */}
+           <div 
+             style={{
+               width: '50px',
+               height: '50px',
+               backgroundColor: '#000',
+               borderRadius: '50%',
+               display: 'flex',
+               alignItems: 'center',
+               justifyContent: 'center',
+               boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+               border: '2px solid #333',
+               cursor: 'pointer',
+               position: 'relative',
+               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+             }}
+             onClick={(e) => {
+               e.stopPropagation();
+               handleClick();
+             }}
+             onMouseEnter={(e) => {
+               if (!isClicked) {
+                 e.target.style.transform = 'scale(1.05)';
+                 e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)';
+               }
+             }}
+             onMouseLeave={(e) => {
+               if (!isClicked) {
+                 e.target.style.transform = 'scale(1)';
+                 e.target.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+               }
+             }}
+           >
+             {/* Blue inner circle */}
+             <div 
+               style={{
+                 width: '25px',
+                 height: '25px',
+                 backgroundColor: '#007AFF',
+                 borderRadius: '50%',
+                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                 boxShadow: '0 0 20px rgba(0, 122, 255, 0.6), 0 0 40px rgba(0, 122, 255, 0.3), 0 0 60px rgba(0, 122, 255, 0.1)',
+                 transform: isClicked ? 'scale(0.9)' : 'scale(1)',
+                 animation: isClicked ? 'bounce 0.2s ease-out' : 'heartbeat 2s ease-in-out infinite',
+                 filter: 'blur(1px)',
+                 pointerEvents: 'none'
+               }}
+             />
+           </div>
         </div>
       </HoverComponent>
 
@@ -149,126 +214,26 @@ const DraggableWidget = () => {
         </div>
       )}
 
-      {/* Aurora effect at the top of the window */}
-      {showAurora && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          pointerEvents: 'none',
-          zIndex: 10001,
-          overflow: 'hidden'
-        }}>
-          {/* Ripple expansion effect from click point */}
-          <svg 
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-            }}
-          >
-            <defs>
-              <radialGradient id="auroraGradient" cx="50%" cy="0%" r="50%">
-                <stop offset="0%" stopColor="#00ffff" stopOpacity="0.8">
-                  <animate attributeName="stopColor" values="#00ffff;#ff00ff;#ffff00;#00ffff" dur="3s" repeatCount="1" />
-                </stop>
-                <stop offset="30%" stopColor="#ff00ff" stopOpacity="0.6">
-                  <animate attributeName="stopColor" values="#ff00ff;#ffff00;#00ffff;#ff00ff" dur="3s" repeatCount="1" />
-                </stop>
-                <stop offset="60%" stopColor="#ffff00" stopOpacity="0.4">
-                  <animate attributeName="stopColor" values="#ffff00;#00ffff;#ff00ff;#ffff00" dur="3s" repeatCount="1" />
-                </stop>
-                <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-              </radialGradient>
-              
-              <filter id="turbulence">
-                <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="turbulence">
-                  <animate attributeName="baseFrequency" values="0.02;0.05;0.02" dur="3s" repeatCount="1" />
-                </feTurbulence>
-                <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="20" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-            </defs>
-            
-            {/* Wave 1 */}
-            <ellipse 
-              cx="50%" 
-              cy="0" 
-              rx="0" 
-              ry="0" 
-              fill="url(#auroraGradient)" 
-              filter="url(#turbulence)"
-              opacity="0"
-            >
-              <animate attributeName="rx" values="0;800;1200" dur="3s" repeatCount="1" />
-              <animate attributeName="ry" values="0;200;300" dur="3s" repeatCount="1" />
-              <animate attributeName="opacity" values="0;0.8;0" dur="3s" repeatCount="1" />
-            </ellipse>
-            
-            {/* Wave 2 */}
-            <ellipse 
-              cx="50%" 
-              cy="0" 
-              rx="0" 
-              ry="0" 
-              fill="url(#auroraGradient)" 
-              filter="url(#turbulence)"
-              opacity="0"
-            >
-              <animate attributeName="rx" values="0;600;1000" dur="3s" begin="0.3s" repeatCount="1" />
-              <animate attributeName="ry" values="0;150;250" dur="3s" begin="0.3s" repeatCount="1" />
-              <animate attributeName="opacity" values="0;0.6;0" dur="3s" begin="0.3s" repeatCount="1" />
-            </ellipse>
-            
-            {/* Wave 3 */}
-            <ellipse 
-              cx="50%" 
-              cy="0" 
-              rx="0" 
-              ry="0" 
-              fill="url(#auroraGradient)" 
-              filter="url(#turbulence)"
-              opacity="0"
-            >
-              <animate attributeName="rx" values="0;400;800" dur="3s" begin="0.6s" repeatCount="1" />
-              <animate attributeName="ry" values="0;100;200" dur="3s" begin="0.6s" repeatCount="1" />
-              <animate attributeName="opacity" values="0;0.4;0" dur="3s" begin="0.6s" repeatCount="1" />
-            </ellipse>
-          </svg>
-          
-          {/* Particle system */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '300px',
-            background: 'radial-gradient(ellipse at 50% 0%, rgba(138, 43, 226, 0.2) 0%, transparent 70%)',
-            animation: 'auroraGlow 3s ease-out',
-          }}>
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${45 + (Math.random() * 10)}%`,
-                  top: '0',
-                  width: '4px',
-                  height: '4px',
-                  backgroundColor: ['#00ffff', '#ff00ff', '#ffff00'][i % 3],
-                  borderRadius: '50%',
-                  boxShadow: `0 0 10px ${['#00ffff', '#ff00ff', '#ffff00'][i % 3]}`,
-                  animation: `particleFall 3s ease-out ${i * 0.1}s`,
-                  opacity: 0
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+                    {/* Horizontal Bar */}
+       {(isBarOpen || showDropdown) && (
+         <HorizontalBar 
+           isOpen={isBarOpen}
+           onClose={handleCloseBar}
+           onTypeSomething={handleTypeSomething}
+           onOpenThread={handleOpenThread}
+           position={position}
+           showDropdown={showDropdown}
+           onCloseDropdown={handleCloseDropdown}
+           dropdownType={dropdownType}
+         />
+       )}
+
+      {/* Dropdown Modal */}
+      <DropdownModal 
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        type={modalType}
+      />
     </div>
   );
 };
