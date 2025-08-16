@@ -1,6 +1,6 @@
 // Imports and modules !!! ---------------------------------------------------------------------------------------------------
 
-import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge, Tray, Menu, screen } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from './resources/icon.png?asset'
@@ -37,7 +37,7 @@ import { execSync } from 'child_process';
 
 // Variables and constants !!! ---------------------------------------------------------------------------------------------------
 
-let mainWindow, store, widgetWindow;
+let mainWindow, store, widgetWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 
 log.transports.file.level = 'info';
@@ -130,7 +130,7 @@ ipcMain.handle('db:updateAgentEnv', async (event, agentId, varName, varValue) =>
 // Custom titlebar handlers
 ipcMain.handle('window:close', () => {
   if (mainWindow) {
-    mainWindow.close();
+    mainWindow.hide();
   }
 });
 
@@ -148,6 +148,11 @@ ipcMain.handle('window:maximize', () => {
       mainWindow.maximize();
     }
   }
+});
+
+ipcMain.handle('window:quit', () => {
+  app.isQuiting = true;
+  app.quit();
 });
 
 // Widget window handlers
@@ -975,6 +980,24 @@ app.whenReady().then(async () => {
 
   mainWindow.setMenuBarVisibility(false);
 
+  // Create tray icon
+  createTray();
+
+  // Handle window close event - hide instead of close
+  mainWindow.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      mainWindow.hide();
+      // Show tray notification that app is still running
+      if (tray) {
+        tray.displayBalloon({
+          title: 'DonnaAI Desktop App',
+          content: 'DonnaAI is still running in the system tray. Click the tray icon to show the app.',
+          icon: icon
+        });
+      }
+    }
+  });
 
   // Register Protocol with the Windows
 
@@ -1004,7 +1027,6 @@ function createWidgetWindow() {
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
-    alwaysOnTop: true,
     transparent: true,
     hasShadow: false,
     show: false, // Don't show until ready
@@ -1041,227 +1063,7 @@ function createWidgetWindow() {
   widgetWindow.on('error', (error) => {
     console.error('Widget window error:', error);
   });
-
-  // Listen for mouse events to enable/disable click-through dynamically
-  widgetWindow.webContents.on('dom-ready', () => {
-    widgetWindow.webContents.executeJavaScript(`
-      // Track click-through state
-      window.isClickThroughEnabled = false;
-      
-      // Function to enable click-through (make window transparent to clicks)
-      window.enableClickThrough = () => {
-        if (window.electronAPI) {
-          window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
-          window.isClickThroughEnabled = true;
-          console.log('Click-through enabled');
-        }
-      };
-      
-      // Function to disable click-through (make window interactive)
-      window.disableClickThrough = () => {
-        if (window.electronAPI) {
-          window.electronAPI.setIgnoreMouseEvents(false);
-          window.isClickThroughEnabled = false;
-          console.log('Click-through disabled - widget is now interactive');
-        }
-      };
-      
-      // Function to toggle click-through
-      window.toggleClickThrough = () => {
-        if (window.isClickThroughEnabled) {
-          window.disableClickThrough();
-        } else {
-          window.enableClickThrough();
-        }
-      };
-      
-      // Function to check if element is interactive/clickable
-      function isInteractiveElement(element) {
-        if (!element) return false;
-        
-        // Check if element is body or html (not interactive)
-        if (element.tagName === 'BODY' || element.tagName === 'HTML') {
-          return false;
-        }
-        
-        // Check if element has specific classes that indicate it's interactive
-        const interactiveClasses = [
-          'button', 'btn', 'clickable', 'interactive', 'widget-content',
-          'overlay', 'modal', 'dialog', 'panel', 'card', 'menu', 'dropdown',
-          'input', 'select', 'textarea', 'link', 'nav', 'sidebar',
-          'widget-interactive' // Custom class for marking elements as interactive
-        ];
-        
-        const className = element.className || '';
-        const classList = element.classList || [];
-        
-        // Check if element has interactive classes
-        for (const cls of interactiveClasses) {
-          if (className.includes(cls) || classList.contains(cls)) {
-            return true;
-          }
-        }
-        
-        // Check if element is marked as non-interactive (allow click-through)
-        if (classList.contains('widget-click-through')) {
-          return false;
-        }
-        
-        // Check if element is a form element or has click handlers
-        const tagName = element.tagName.toLowerCase();
-        const interactiveTags = ['button', 'input', 'select', 'textarea', 'a', 'label', 'div', 'span'];
-        
-        if (interactiveTags.includes(tagName)) {
-          // Check if element has content or is styled to be visible
-          const styles = window.getComputedStyle(element);
-          const hasContent = element.textContent && element.textContent.trim().length > 0;
-          const hasChildren = element.children && element.children.length > 0;
-          const hasBackground = styles.backgroundColor && styles.backgroundColor !== 'rgba(0, 0, 0, 0)' && styles.backgroundColor !== 'transparent';
-          const hasBorder = styles.border && styles.border !== 'none';
-          const hasOpacity = parseFloat(styles.opacity) > 0.1;
-          const hasDisplay = styles.display !== 'none';
-          const hasVisibility = styles.visibility !== 'hidden';
-          
-          // If element has any of these properties, it's likely interactive
-          if (hasContent || hasChildren || hasBackground || hasBorder || (hasOpacity && hasDisplay && hasVisibility)) {
-            return true;
-          }
-        }
-        
-        // Check if element has event listeners or is clickable
-        if (element.onclick || element.getAttribute('onclick')) {
-          return true;
-        }
-        
-        // Check if element has role attribute indicating it's interactive
-        const role = element.getAttribute('role');
-        if (role && ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'textbox'].includes(role)) {
-          return true;
-        }
-        
-        return false;
-      }
-      
-      // Function to check if element should allow click-through
-      function shouldAllowClickThrough(element) {
-        if (!element) return true;
-        
-        // If element is interactive, don't allow click-through
-        if (isInteractiveElement(element)) {
-          return false;
-        }
-        
-        // Check if element is completely transparent and empty
-        const styles = window.getComputedStyle(element);
-        const backgroundColor = styles.backgroundColor;
-        const opacity = parseFloat(styles.opacity);
-        const hasContent = element.textContent && element.textContent.trim().length > 0;
-        const hasChildren = element.children && element.children.length > 0;
-        
-        // Allow click-through only if element is completely transparent and has no content
-        return (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') && 
-               opacity < 0.1 && 
-               !hasContent && 
-               !hasChildren;
-      }
-      
-      // Start with click-through disabled to be safe
-      window.disableClickThrough();
-      
-      // Handle mouse events to dynamically enable/disable click-through
-      document.addEventListener('mouseover', (event) => {
-        const target = event.target;
-        console.log('Mouse over:', target.tagName, target.className, 'Interactive:', isInteractiveElement(target));
-        
-        // If hovering over an interactive element, disable click-through
-        if (isInteractiveElement(target)) {
-          window.disableClickThrough();
-        }
-      });
-      
-      document.addEventListener('mouseout', (event) => {
-        const target = event.target;
-        const relatedTarget = event.relatedTarget;
-        
-        // If mouse is leaving to a non-interactive area, enable click-through
-        if (!relatedTarget || !isInteractiveElement(relatedTarget)) {
-          console.log('Mouse leaving to non-interactive area, enabling click-through');
-          window.enableClickThrough();
-        }
-      });
-      
-      // Handle clicks - prevent default on interactive elements
-      document.addEventListener('click', (event) => {
-        const target = event.target;
-        console.log('Click detected on:', target.tagName, target.className, 'Interactive:', isInteractiveElement(target));
-        
-        if (isInteractiveElement(target)) {
-          // This is a click on interactive content, prevent it from passing through
-          event.stopPropagation();
-          console.log('Click on interactive element - preventing pass-through');
-        } else {
-          // This is a click on non-interactive area, let it pass through
-          console.log('Click on non-interactive area - allowing pass-through');
-        }
-      });
-      
-      // Handle mousedown events
-      document.addEventListener('mousedown', (event) => {
-        const target = event.target;
-        
-        if (isInteractiveElement(target)) {
-          // Prevent mousedown from passing through on interactive elements
-          event.stopPropagation();
-          console.log('Mouse down on interactive element - preventing pass-through');
-        }
-      });
-      
-      // Add a way to manually control click-through for specific areas
-      window.setClickThroughForElement = (element, enable) => {
-        if (enable) {
-          element.style.pointerEvents = 'none';
-        } else {
-          element.style.pointerEvents = 'auto';
-        }
-      };
-      
-      // Add a way to mark elements as interactive
-      window.markAsInteractive = (element) => {
-        if (element) {
-          element.classList.add('widget-interactive');
-        }
-      };
-      
-      // Add a way to mark elements as non-interactive (allow click-through)
-      window.markAsNonInteractive = (element) => {
-        if (element) {
-          element.classList.add('widget-click-through');
-        }
-      };
-    `);
-  });
-
-  // Load the widget window with proper React support
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    // In development, load the widget from the same dev server but with a query parameter
-    const baseUrl = process.env['ELECTRON_RENDERER_URL'];
-    const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
-    console.log('Widget URL:', widgetUrl);
-    console.log('Original URL:', process.env['ELECTRON_RENDERER_URL']);
-    widgetWindow.loadURL(widgetUrl).catch((error) => {
-      console.error('Failed to load widget URL:', error);
-    });
-  } else {
-    widgetWindow.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
-      console.error('Failed to load widget file:', error);
-    });
-  }
-
-  widgetWindow.setMenuBarVisibility(false);
-  
-  // Position the widget window at (0, 0) with size 1200x800
-  widgetWindow.setPosition(0, 0);
-  widgetWindow.setSize(1200, 800);
+  // Removed dynamic click-through listener (dom-ready) and injected script block
 }
 
 createWidgetWindow();
@@ -1307,10 +1109,75 @@ app.on('will-quit' , async (event) => {
     }
   }
 
+  // Clean up tray
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+
   globalShortcut.unregisterAll();
   app.exit(0);
 });
 
+
+// Tray Section !!! --------------------------------------------------------------------------------
+
+function createTray() {
+  // Create tray icon
+  tray = new Tray(icon);
+  tray.setToolTip('DonnaAI Desktop App');
+
+  // Create context menu for tray
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show DonnaAI',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    {
+      label: 'Hide DonnaAI',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.hide();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.isQuiting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  // Handle tray icon click to show/hide window
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+        // Show notification when app is restored from tray
+        tray.displayBalloon({
+          title: 'DonnaAI Desktop App',
+          content: 'Welcome back! DonnaAI is now visible.',
+          icon: icon
+        });
+      }
+    }
+  });
+}
+
+// Tray Section END !!! --------------------------------------------------------------------------------
 
 // App Section END !!! --------------------------------------------------------------------------------
 

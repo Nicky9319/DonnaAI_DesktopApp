@@ -15,6 +15,65 @@ const Titlebar = () => {
         }
     };
 
+    const handleQuit = () => {
+        console.log('Quit button clicked');
+        if (window.electronAPI && window.electronAPI.quitApp) {
+            console.log('Calling electronAPI.quitApp()');
+            window.electronAPI.quitApp();
+        } else {
+            console.warn('Electron API not available. Cannot quit app.');
+        }
+    };
+
+    const handleContextMenu = (e) => {
+        e.preventDefault();
+        // Create a simple context menu
+        const menu = document.createElement('div');
+        menu.style.cssText = `
+            position: fixed;
+            top: ${e.clientY}px;
+            left: ${e.clientX}px;
+            background: #2C2C2E;
+            border: 1px solid #3A3A3C;
+            border-radius: 6px;
+            padding: 4px 0;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        
+        const quitOption = document.createElement('div');
+        quitOption.textContent = 'Quit DonnaAI';
+        quitOption.style.cssText = `
+            padding: 8px 16px;
+            color: #FFFFFF;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        `;
+        quitOption.onmouseenter = () => {
+            quitOption.style.backgroundColor = '#3A3A3C';
+        };
+        quitOption.onmouseleave = () => {
+            quitOption.style.backgroundColor = 'transparent';
+        };
+        quitOption.onclick = () => {
+            handleQuit();
+            document.body.removeChild(menu);
+        };
+        
+        menu.appendChild(quitOption);
+        document.body.appendChild(menu);
+        
+        // Remove menu when clicking outside
+        const removeMenu = () => {
+            if (document.body.contains(menu)) {
+                document.body.removeChild(menu);
+            }
+            document.removeEventListener('click', removeMenu);
+        };
+        setTimeout(() => document.addEventListener('click', removeMenu), 0);
+    };
+
     return (
         <div
             className="w-full h-8 flex items-center justify-between px-3"
@@ -24,6 +83,7 @@ const Titlebar = () => {
                 WebkitAppRegion: 'drag', // Makes the entire bar draggable
                 userSelect: 'none' // Prevents text selection
             }}
+            onContextMenu={handleContextMenu}
         >
             {/* Left side - Close Button Only */}
             <div className="flex items-center">

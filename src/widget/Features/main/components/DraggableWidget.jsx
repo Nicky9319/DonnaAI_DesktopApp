@@ -142,55 +142,74 @@ const DraggableWidget = () => {
           }}
           onMouseDown={handleMouseDown}
         >
-                     {/* Black outer cover */}
-           <div 
-             style={{
-               width: '50px',
-               height: '50px',
-               backgroundColor: '#000',
-               borderRadius: '50%',
-               display: 'flex',
-               alignItems: 'center',
-               justifyContent: 'center',
-               boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-               border: '2px solid #333',
-               cursor: 'pointer',
-               position: 'relative',
-               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-             }}
-             onClick={(e) => {
-               e.stopPropagation();
-               handleClick();
-             }}
-             onMouseEnter={(e) => {
-               if (!isClicked) {
-                 e.target.style.transform = 'scale(1.05)';
-                 e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)';
-               }
-             }}
-             onMouseLeave={(e) => {
-               if (!isClicked) {
-                 e.target.style.transform = 'scale(1)';
-                 e.target.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
-               }
-             }}
-           >
-             {/* Blue inner circle */}
-             <div 
-               style={{
-                 width: '25px',
-                 height: '25px',
-                 backgroundColor: '#007AFF',
-                 borderRadius: '50%',
-                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                 boxShadow: '0 0 20px rgba(0, 122, 255, 0.6), 0 0 40px rgba(0, 122, 255, 0.3), 0 0 60px rgba(0, 122, 255, 0.1)',
-                 transform: isClicked ? 'scale(0.9)' : 'scale(1)',
-                 animation: isClicked ? 'bounce 0.2s ease-out' : 'heartbeat 2s ease-in-out infinite',
-                 filter: 'blur(1px)',
-                 pointerEvents: 'none'
-               }}
-             />
-           </div>
+          {/* Black outer cover */}
+          <div 
+            style={{
+              width: '50px',
+              height: '50px',
+              backgroundColor: '#000',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+              border: '2px solid #333',
+              cursor: 'pointer',
+              position: 'relative',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClick();
+            }}
+            onMouseEnter={(e) => {
+              if (!isClicked) {
+                e.target.style.transform = 'scale(1.05)';
+                e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isClicked) {
+                e.target.style.transform = 'scale(1)';
+                e.target.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+              }
+            }}
+          >
+            {/* Blue inner circle */}
+            <div 
+              style={{
+                width: '18px',
+                height: '18px',
+                backgroundColor: '#007AFF',
+                borderRadius: '50%',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 0 50px rgba(0, 122, 255, 1), 0 0 100px rgba(0, 122, 255, 1), 0 0 150px rgba(0, 122, 255, 0.9), 0 0 200px rgba(0, 122, 255, 0.7), 0 0 250px rgba(0, 122, 255, 0.5)',
+                transform: isClicked ? 'scale(0.9)' : 'scale(1)',
+                animation: isClicked ? 'bounce 0.2s ease-out' : 'heartbeat 2s ease-in-out infinite',
+                filter: 'blur(3px)',
+                pointerEvents: 'none',
+                zIndex: 2,
+                position: 'relative'
+              }}
+            >
+              {/* Glass-like layer on blue circle only */}
+              <div 
+                style={{
+                  position: 'absolute',
+                  top: '0',
+                  left: '0',
+                  right: '0',
+                  bottom: '0',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.1) 100%)',
+                  backdropFilter: 'blur(1px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  pointerEvents: 'none',
+                  zIndex: 3
+                }}
+              />
+            </div>
+          </div>
         </div>
       </HoverComponent>
 
@@ -202,9 +221,9 @@ const DraggableWidget = () => {
           top: position.y + 70,
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
           color: 'white',
-          padding: '8px 12px',
+          padding: '6px 10px',
           borderRadius: '6px',
-          fontSize: '14px',
+          fontSize: '12px',
           fontWeight: 'bold',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
