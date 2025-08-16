@@ -1036,48 +1036,106 @@ function createWidgetWindow() {
         }
       };
       
-      // Function to check if element is transparent/empty
-      function isTransparentElement(element) {
-        if (!element) return true;
+      // Function to check if element is interactive/clickable
+      function isInteractiveElement(element) {
+        if (!element) return false;
         
-        // Check if element is body or html (transparent areas)
+        // Check if element is body or html (not interactive)
         if (element.tagName === 'BODY' || element.tagName === 'HTML') {
+          return false;
+        }
+        
+        // Check if element has specific classes that indicate it's interactive
+        const interactiveClasses = [
+          'button', 'btn', 'clickable', 'interactive', 'widget-content',
+          'overlay', 'modal', 'dialog', 'panel', 'card', 'menu', 'dropdown',
+          'input', 'select', 'textarea', 'link', 'nav', 'sidebar',
+          'widget-interactive' // Custom class for marking elements as interactive
+        ];
+        
+        const className = element.className || '';
+        const classList = element.classList || [];
+        
+        // Check if element has interactive classes
+        for (const cls of interactiveClasses) {
+          if (className.includes(cls) || classList.contains(cls)) {
+            return true;
+          }
+        }
+        
+        // Check if element is marked as non-interactive (allow click-through)
+        if (classList.contains('widget-click-through')) {
+          return false;
+        }
+        
+        // Check if element is a form element or has click handlers
+        const tagName = element.tagName.toLowerCase();
+        const interactiveTags = ['button', 'input', 'select', 'textarea', 'a', 'label', 'div', 'span'];
+        
+        if (interactiveTags.includes(tagName)) {
+          // Check if element has content or is styled to be visible
+          const styles = window.getComputedStyle(element);
+          const hasContent = element.textContent && element.textContent.trim().length > 0;
+          const hasChildren = element.children && element.children.length > 0;
+          const hasBackground = styles.backgroundColor && styles.backgroundColor !== 'rgba(0, 0, 0, 0)' && styles.backgroundColor !== 'transparent';
+          const hasBorder = styles.border && styles.border !== 'none';
+          const hasOpacity = parseFloat(styles.opacity) > 0.1;
+          const hasDisplay = styles.display !== 'none';
+          const hasVisibility = styles.visibility !== 'hidden';
+          
+          // If element has any of these properties, it's likely interactive
+          if (hasContent || hasChildren || hasBackground || hasBorder || (hasOpacity && hasDisplay && hasVisibility)) {
+            return true;
+          }
+        }
+        
+        // Check if element has event listeners or is clickable
+        if (element.onclick || element.getAttribute('onclick')) {
           return true;
         }
         
-        // Check computed styles
-        const styles = window.getComputedStyle(element);
-        const backgroundColor = styles.backgroundColor;
-        const opacity = styles.opacity;
-        
-        // Check if background is transparent
-        if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
-          return true;
-        }
-        
-        // Check if opacity is very low
-        if (parseFloat(opacity) < 0.1) {
-          return true;
-        }
-        
-        // Check if element has no content and no background
-        if (!element.textContent && !element.children.length && backgroundColor === 'rgba(0, 0, 0, 0)') {
+        // Check if element has role attribute indicating it's interactive
+        const role = element.getAttribute('role');
+        if (role && ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'textbox'].includes(role)) {
           return true;
         }
         
         return false;
       }
       
-      // Start with click-through enabled for transparent areas
-      window.enableClickThrough();
+      // Function to check if element should allow click-through
+      function shouldAllowClickThrough(element) {
+        if (!element) return true;
+        
+        // If element is interactive, don't allow click-through
+        if (isInteractiveElement(element)) {
+          return false;
+        }
+        
+        // Check if element is completely transparent and empty
+        const styles = window.getComputedStyle(element);
+        const backgroundColor = styles.backgroundColor;
+        const opacity = parseFloat(styles.opacity);
+        const hasContent = element.textContent && element.textContent.trim().length > 0;
+        const hasChildren = element.children && element.children.length > 0;
+        
+        // Allow click-through only if element is completely transparent and has no content
+        return (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') && 
+               opacity < 0.1 && 
+               !hasContent && 
+               !hasChildren;
+      }
+      
+      // Start with click-through disabled to be safe
+      window.disableClickThrough();
       
       // Handle mouse events to dynamically enable/disable click-through
       document.addEventListener('mouseover', (event) => {
         const target = event.target;
-        console.log('Mouse over:', target.tagName, target.className);
+        console.log('Mouse over:', target.tagName, target.className, 'Interactive:', isInteractiveElement(target));
         
-        // If hovering over a non-transparent element, disable click-through
-        if (!isTransparentElement(target)) {
+        // If hovering over an interactive element, disable click-through
+        if (isInteractiveElement(target)) {
           window.disableClickThrough();
         }
       });
@@ -1086,26 +1144,25 @@ function createWidgetWindow() {
         const target = event.target;
         const relatedTarget = event.relatedTarget;
         
-        // If mouse is leaving to a transparent area, enable click-through
-        if (isTransparentElement(relatedTarget) || !relatedTarget) {
-          console.log('Mouse leaving to transparent area, enabling click-through');
+        // If mouse is leaving to a non-interactive area, enable click-through
+        if (!relatedTarget || !isInteractiveElement(relatedTarget)) {
+          console.log('Mouse leaving to non-interactive area, enabling click-through');
           window.enableClickThrough();
         }
       });
       
-      // Handle clicks - only prevent default if clicking on non-transparent elements
+      // Handle clicks - prevent default on interactive elements
       document.addEventListener('click', (event) => {
         const target = event.target;
-        console.log('Click detected on:', target.tagName, target.className);
+        console.log('Click detected on:', target.tagName, target.className, 'Interactive:', isInteractiveElement(target));
         
-        if (!isTransparentElement(target)) {
-          // This is a click on actual content, prevent it from passing through
+        if (isInteractiveElement(target)) {
+          // This is a click on interactive content, prevent it from passing through
           event.stopPropagation();
-          console.log('Click on content - preventing pass-through');
+          console.log('Click on interactive element - preventing pass-through');
         } else {
-          // This is a click on transparent area, let it pass through
-          console.log('Click on transparent area - allowing pass-through');
-          // Don't prevent default or stop propagation
+          // This is a click on non-interactive area, let it pass through
+          console.log('Click on non-interactive area - allowing pass-through');
         }
       });
       
@@ -1113,10 +1170,10 @@ function createWidgetWindow() {
       document.addEventListener('mousedown', (event) => {
         const target = event.target;
         
-        if (!isTransparentElement(target)) {
-          // Prevent mousedown from passing through on content
+        if (isInteractiveElement(target)) {
+          // Prevent mousedown from passing through on interactive elements
           event.stopPropagation();
-          console.log('Mouse down on content - preventing pass-through');
+          console.log('Mouse down on interactive element - preventing pass-through');
         }
       });
       
@@ -1126,6 +1183,20 @@ function createWidgetWindow() {
           element.style.pointerEvents = 'none';
         } else {
           element.style.pointerEvents = 'auto';
+        }
+      };
+      
+      // Add a way to mark elements as interactive
+      window.markAsInteractive = (element) => {
+        if (element) {
+          element.classList.add('widget-interactive');
+        }
+      };
+      
+      // Add a way to mark elements as non-interactive (allow click-through)
+      window.markAsNonInteractive = (element) => {
+        if (element) {
+          element.classList.add('widget-click-through');
         }
       };
     `);
