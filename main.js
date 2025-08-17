@@ -901,7 +901,7 @@ app.whenReady().then(async () => {
 
   globalShortcut.register('F5', () => {
     console.log('F5 is disabled');
-  });
+  });-
 
   // Widget toggle shortcut (Ctrl + `)
   globalShortcut.register('CommandOrControl+`', () => {

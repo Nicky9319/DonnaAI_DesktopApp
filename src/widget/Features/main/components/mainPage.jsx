@@ -1,11 +1,14 @@
 import React from 'react'
-import DraggableWidget from './DraggableWidget'
+import FloatingWidget from '../../floatingWidget/FloatingWidget'
+import ActionBar from '../../actionBar/ActionBar'
+// import ChatInterface from '../../chatInterface/ChatInterface'
 
 const MainPage = () => {
   return (
     <>
-      <DraggableWidget />
-      
+      <FloatingWidget />
+      <ActionBar />
+      {/* <ChatInterface /> */}
     </>
   );
 };
