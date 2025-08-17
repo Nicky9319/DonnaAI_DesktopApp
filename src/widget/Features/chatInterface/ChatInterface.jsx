@@ -17,8 +17,12 @@ const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
@@ -38,6 +42,51 @@ const ChatInterface = () => {
       textareaRef.current.style.height = newHeight + 'px';
     }
   }, [inputValue]);
+
+  // Drag functionality
+  const handleMouseDown = (e) => {
+    if (e.target.closest('button') || e.target.closest('textarea')) {
+      return; // Don't start dragging if clicking on buttons or textarea
+    }
+    
+    setIsDragging(true);
+    const rect = containerRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+    
+    // Keep widget within viewport bounds
+    const maxX = window.innerWidth - (isExpanded ? 540 : 390);
+    const maxY = window.innerHeight - (isExpanded ? 600 : 500);
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -108,16 +157,17 @@ const ChatInterface = () => {
 
   const sidebarWidth = 40;
   const chatWidth = isExpanded ? '500px' : '350px';
-  const chatHeight = isExpanded ? '500px' : '400px';
-  const messagesHeight = isExpanded ? '400px' : '300px';
+  const chatHeight = isExpanded ? '600px' : '500px'; // Increased height
+  const messagesHeight = isExpanded ? '500px' : '400px'; // Increased messages area
 
   return (
     <HoverComponent>
       <div
+        ref={containerRef}
         style={{
           position: 'fixed',
-          top: '120px',
-          left: `calc(50vw - ${parseInt(chatWidth) / 2 + sidebarWidth / 2}px)`,
+          top: position.y || '120px',
+          left: position.x || `calc(50vw - ${parseInt(chatWidth) / 2 + sidebarWidth / 2}px)`,
           background: themeColors.primaryBackground,
           border: `1px solid ${themeColors.borderColor}`,
           borderRadius: '12px',
@@ -129,8 +179,10 @@ const ChatInterface = () => {
           animation: 'slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           pointerEvents: 'auto',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          cursor: isDragging ? 'grabbing' : 'default'
         }}
+        onMouseDown={handleMouseDown}
       >
         {/* Messages Area with Sidebar */}
         <div style={{
@@ -147,38 +199,8 @@ const ChatInterface = () => {
             flexDirection: 'column',
             alignItems: 'center',
             padding: '8px 0',
-            gap: '8px'
+            gap: '0px'
           }}>
-            {/* Expand/Collapse Button */}
-            <button
-              onClick={handleExpand}
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '6px',
-                border: 'none',
-                background: themeColors.tertiaryBackground,
-                color: themeColors.primaryText,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                fontSize: '10px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = themeColors.hoverBackground;
-                e.target.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = themeColors.tertiaryBackground;
-                e.target.style.transform = 'scale(1)';
-              }}
-              title={isExpanded ? 'Collapse' : 'Expand'}
-            >
-              {isExpanded ? '−' : '+'}
-            </button>
-
             {/* Close Button */}
             <button
               onClick={handleClose}
@@ -194,7 +216,8 @@ const ChatInterface = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s',
-                fontSize: '10px'
+                fontSize: '10px',
+                marginBottom: '4px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.background = themeColors.errorRed;
@@ -209,8 +232,9 @@ const ChatInterface = () => {
               ×
             </button>
 
-            {/* Settings Button (placeholder for future features) */}
+            {/* Expand Button */}
             <button
+              onClick={handleExpand}
               style={{
                 width: '24px',
                 height: '24px',
@@ -224,21 +248,50 @@ const ChatInterface = () => {
                 justifyContent: 'center',
                 transition: 'all 0.2s',
                 fontSize: '10px',
-                opacity: 0.6
+                marginBottom: '4px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.background = themeColors.hoverBackground;
                 e.target.style.transform = 'scale(1.1)';
-                e.target.style.opacity = '1';
               }}
               onMouseLeave={(e) => {
                 e.target.style.background = themeColors.tertiaryBackground;
                 e.target.style.transform = 'scale(1)';
-                e.target.style.opacity = '0.6';
               }}
-              title="Settings (Coming Soon)"
+              title={isExpanded ? 'Collapse' : 'Expand'}
             >
-              ⚙
+              {isExpanded ? '−' : '+'}
+            </button>
+
+            {/* Drag Handle */}
+            <button
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '6px',
+                border: 'none',
+                background: themeColors.tertiaryBackground,
+                color: themeColors.primaryText,
+                cursor: 'grab',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                fontSize: '10px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = themeColors.hoverBackground;
+                e.target.style.transform = 'scale(1.1)';
+                e.target.style.cursor = 'grabbing';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = themeColors.tertiaryBackground;
+                e.target.style.transform = 'scale(1)';
+                e.target.style.cursor = 'grab';
+              }}
+              title="Drag to move"
+            >
+              ⋮⋮
             </button>
           </div>
 
