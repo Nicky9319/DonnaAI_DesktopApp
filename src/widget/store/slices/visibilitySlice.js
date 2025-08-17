@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-  isVisible: false, // Components are hidden by default
+  isVisible: true, // Components are visible by default
 }
 
 const visibilitySlice = createSlice({
