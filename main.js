@@ -912,9 +912,11 @@ app.whenReady().then(async () => {
         console.log('Widget hidden');
       } else {
         widgetWindow.show();
-        // Ensure click-through is maintained when showing
         setTimeout(() => {
           widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+          widgetWindow.setAlwaysOnTop(false); // Reset first
+          widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+          widgetWindow.focus(); // Ensure focus
         }, 100);
         console.log('Widget shown');
       }
@@ -1021,25 +1023,30 @@ function createWidgetWindow() {
   // Widget window event handlers
   widgetWindow.on('ready-to-show', () => {
     console.log('Widget window ready to show');
-    // Start hidden by default - will be shown via shortcut
     widgetWindow.hide();
-    // Start with click-through enabled for transparent areas
     widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+    widgetWindow.setAlwaysOnTop(true, 'screen-saver');
   });
 
-  // Ensure click-through stays enabled
   widgetWindow.on('show', () => {
     console.log('Widget window shown, ensuring click-through');
     widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+    widgetWindow.setAlwaysOnTop(true, 'screen-saver');
+    // Force focus and bring to front
+    setTimeout(() => {
+      widgetWindow.focus();
+      widgetWindow.setAlwaysOnTop(false); // Reset
+      widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+    }, 50);
+  });
+
+  widgetWindow.on('focus', () => {
+    widgetWindow.setAlwaysOnTop(true, 'screen-saver');
   });
 
   widgetWindow.on('closed', () => {
     console.log('Widget window closed');
     widgetWindow = null;
-  });
-
-  widgetWindow.on('error', (error) => {
-    console.error('Widget window error:', error);
   });
 
   // Listen for mouse events to enable/disable click-through dynamically
