@@ -32,7 +32,9 @@ const ChatInterface = () => {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 80) + 'px';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const newHeight = Math.min(Math.max(scrollHeight, 28), 120); // Min 28px, Max 120px
+      textareaRef.current.style.height = newHeight + 'px';
     }
   }, [inputValue]);
 
@@ -157,7 +159,7 @@ const ChatInterface = () => {
         <div
           className="messages-container"
           style={{
-            height: '280px',
+            height: '300px',
             overflowY: 'auto',
             padding: '12px',
             display: 'flex',
@@ -274,13 +276,13 @@ const ChatInterface = () => {
 
         {/* Input Area */}
         <div style={{
-          padding: '12px',
+          padding: '8px 12px',
           borderTop: `1px solid ${themeColors.borderColor}`,
           background: themeColors.secondaryBackground
         }}>
           <div style={{
             display: 'flex',
-            gap: '8px',
+            gap: '6px',
             alignItems: 'flex-end'
           }}>
             <textarea
@@ -291,18 +293,19 @@ const ChatInterface = () => {
               placeholder="Type your message..."
               style={{
                 flex: 1,
-                minHeight: '32px',
-                maxHeight: '80px',
-                padding: '8px 12px',
+                minHeight: '28px',
+                maxHeight: '120px',
+                padding: '6px 10px',
                 border: `1px solid ${themeColors.borderColor}`,
-                borderRadius: '16px',
-                fontSize: '12px',
+                borderRadius: '14px',
+                fontSize: '11px',
                 resize: 'none',
                 outline: 'none',
                 fontFamily: 'inherit',
                 background: themeColors.primaryBackground,
                 color: themeColors.primaryText,
-                transition: 'border-color 0.2s'
+                transition: 'all 0.2s ease',
+                lineHeight: '1.3'
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = themeColors.primaryBlue;
@@ -315,8 +318,8 @@ const ChatInterface = () => {
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isTyping}
               style={{
-                width: '32px',
-                height: '32px',
+                width: '28px',
+                height: '28px',
                 borderRadius: '50%',
                 border: 'none',
                 background: inputValue.trim() && !isTyping ? themeColors.primaryBlue : themeColors.tertiaryBackground,
@@ -326,7 +329,8 @@ const ChatInterface = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s',
-                transform: inputValue.trim() && !isTyping ? 'scale(1)' : 'scale(0.9)'
+                transform: inputValue.trim() && !isTyping ? 'scale(1)' : 'scale(0.9)',
+                flexShrink: 0
               }}
               onMouseEnter={(e) => {
                 if (inputValue.trim() && !isTyping) {
@@ -341,7 +345,7 @@ const ChatInterface = () => {
                 }
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
               </svg>
             </button>
