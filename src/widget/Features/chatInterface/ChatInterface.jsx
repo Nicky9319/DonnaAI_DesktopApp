@@ -45,8 +45,8 @@ const ChatInterface = () => {
 
   // Drag functionality
   const handleMouseDown = (e) => {
-    if (e.target.closest('button') || e.target.closest('textarea')) {
-      return; // Don't start dragging if clicking on buttons or textarea
+    if (e.target.closest('textarea')) {
+      return; // Don't start dragging if clicking on textarea
     }
     
     setIsDragging(true);
@@ -63,9 +63,9 @@ const ChatInterface = () => {
     const newX = e.clientX - dragOffset.x;
     const newY = e.clientY - dragOffset.y;
     
-    // Keep widget within viewport bounds
-    const maxX = window.innerWidth - (isExpanded ? 540 : 390);
-    const maxY = window.innerHeight - (isExpanded ? 600 : 500);
+         // Keep widget within viewport bounds
+     const maxX = window.innerWidth - (isExpanded ? 740 : 390);
+     const maxY = window.innerHeight - (isExpanded ? 650 : 500);
     
     setPosition({
       x: Math.max(0, Math.min(newX, maxX)),
@@ -156,9 +156,9 @@ const ChatInterface = () => {
   };
 
   const sidebarWidth = 40;
-  const chatWidth = isExpanded ? '500px' : '350px';
-  const chatHeight = isExpanded ? '600px' : '500px'; // Increased height
-  const messagesHeight = isExpanded ? '500px' : '400px'; // Increased messages area
+  const chatWidth = isExpanded ? '700px' : '350px';
+  const chatHeight = isExpanded ? '650px' : '500px'; // Reduced height
+  const messagesHeight = isExpanded ? '550px' : '400px'; // Reduced messages area
 
   return (
     <HoverComponent>
@@ -247,8 +247,7 @@ const ChatInterface = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s',
-                fontSize: '10px',
-                marginBottom: '4px'
+                fontSize: '10px'
               }}
               onMouseEnter={(e) => {
                 e.target.style.background = themeColors.hoverBackground;
@@ -261,37 +260,6 @@ const ChatInterface = () => {
               title={isExpanded ? 'Collapse' : 'Expand'}
             >
               {isExpanded ? '−' : '+'}
-            </button>
-
-            {/* Drag Handle */}
-            <button
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '6px',
-                border: 'none',
-                background: themeColors.tertiaryBackground,
-                color: themeColors.primaryText,
-                cursor: 'grab',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                fontSize: '10px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = themeColors.hoverBackground;
-                e.target.style.transform = 'scale(1.1)';
-                e.target.style.cursor = 'grabbing';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = themeColors.tertiaryBackground;
-                e.target.style.transform = 'scale(1)';
-                e.target.style.cursor = 'grab';
-              }}
-              title="Drag to move"
-            >
-              ⋮⋮
             </button>
           </div>
 
