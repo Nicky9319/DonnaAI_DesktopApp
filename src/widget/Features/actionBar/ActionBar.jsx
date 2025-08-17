@@ -1,13 +1,26 @@
 import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
+import { themeColors } from '../common/utils/colors';
+import { setChatInterfaceVisible } from '../store/uiVisibilitySlice';
 
 const ActionBar = () => {
+  const dispatch = useDispatch();
+  const chatInterfaceVisible = useSelector((state) => state.uiVisibility.chatInterfaceVisible);
+  
   const position = { x: 1200, y: 20 };
-  const isNearRightEdge = position.x > window.innerWidth - 300;
-  const barWidth = 220;
+  const isNearRightEdge = position.x > window.innerWidth - 200;
+  const barWidth = 140; // Much smaller width
   const safeLeft = isNearRightEdge ?
     Math.max(10, position.x - barWidth - 20) :
     Math.min(window.innerWidth - barWidth - 10, position.x + 60);
+
+  const handleShowMessages = () => {
+    if (!chatInterfaceVisible) {
+      dispatch(setChatInterfaceVisible(true));
+      console.log('✅ Chat interface opened from action bar');
+    }
+  };
 
   return (
     <HoverComponent>
@@ -21,7 +34,6 @@ const ActionBar = () => {
         zIndex: 10002,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
         pointerEvents: 'auto',
         width: 'fit-content',
         height: 'fit-content'
@@ -30,94 +42,80 @@ const ActionBar = () => {
         <div style={{
           width: 0,
           height: 0,
-          borderTop: '6px solid transparent',
-          borderBottom: '6px solid transparent',
-          borderRight: isNearRightEdge ? 'none' : '6px solid rgba(0, 0, 0, 0.9)',
-          borderLeft: isNearRightEdge ? '6px solid rgba(0, 0, 0, 0.9)' : 'none',
+          borderTop: '5px solid transparent',
+          borderBottom: '5px solid transparent',
+          borderRight: isNearRightEdge ? 'none' : '5px solid rgba(0, 0, 0, 0.9)',
+          borderLeft: isNearRightEdge ? '5px solid rgba(0, 0, 0, 0.9)' : 'none',
           marginRight: isNearRightEdge ? '0' : '-1px',
           marginLeft: isNearRightEdge ? '-1px' : '0',
           filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
         }} />
 
-        {/* Bar background */}
+        {/* Compact bar background */}
         <div style={{
-          background: '#000000',
+          background: themeColors.primaryBackground,
           backdropFilter: 'blur(10px)',
-          borderRadius: '25px',
-          padding: '8px 16px',
+          borderRadius: '20px',
+          padding: '6px 12px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-          border: '1px solid #1C1C1E',
-          minWidth: '200px'
+          boxShadow: '0 6px 24px rgba(0, 0, 0, 0.4)',
+          border: `1px solid ${themeColors.borderColor}`,
+          minWidth: '120px',
+          maxWidth: '140px'
         }}>
-          {/* Type Something Button */}
-          <button style={{
-            background: '#007AFF',
-            border: 'none',
-            borderRadius: '20px',
-            padding: '8px 16px',
-            color: '#FFFFFF',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-            whiteSpace: 'nowrap'
-          }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {/* Show Messages Button */}
+          <button 
+            onClick={handleShowMessages}
+            disabled={chatInterfaceVisible}
+            style={{
+              background: chatInterfaceVisible ? themeColors.tertiaryBackground : themeColors.primaryBlue,
+              border: 'none',
+              borderRadius: '16px',
+              padding: '6px 12px',
+              color: themeColors.primaryText,
+              fontSize: '11px',
+              fontWeight: '600',
+              cursor: chatInterfaceVisible ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: chatInterfaceVisible 
+                ? 'none' 
+                : '0 2px 8px rgba(0, 122, 255, 0.3)',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              opacity: chatInterfaceVisible ? 0.6 : 1,
+              width: '100%',
+              justifyContent: 'center',
+              border: chatInterfaceVisible ? 'none' : '1px solid transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (!chatInterfaceVisible) {
+                e.target.style.background = '#0056CC'; // Darker blue for better hover effect
+                e.target.style.transform = 'scale(1.05)';
+                e.target.style.boxShadow = '0 4px 12px rgba(0, 122, 255, 0.4)';
+                e.target.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!chatInterfaceVisible) {
+                e.target.style.background = themeColors.primaryBlue;
+                e.target.style.transform = 'scale(1)';
+                e.target.style.boxShadow = '0 2px 8px rgba(0, 122, 255, 0.3)';
+                e.target.style.border = '1px solid transparent';
+              }
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            Type
-          </button>
-
-          {/* Message Thread Button */}
-          <button style={{
-            background: '#00D09C',
-            border: 'none',
-            borderRadius: '20px',
-            padding: '8px 16px',
-            color: '#FFFFFF',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 2px 8px rgba(0, 208, 156, 0.3)',
-            whiteSpace: 'nowrap'
-          }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>
-            Thread
-          </button>
-
-          {/* Close button */}
-          <button style={{
-            background: '#2D2D2F',
-            border: 'none',
-            borderRadius: '50%',
-            width: '24px',
-            height: '24px',
-            color: '#FFFFFF',
-            fontSize: '14px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginLeft: '4px'
-          }}>
-            ×
+            {chatInterfaceVisible ? 'Open' : 'Messages'}
           </button>
         </div>
       </div>
     </HoverComponent>
   );
 };
-
 
 export default ActionBar;
