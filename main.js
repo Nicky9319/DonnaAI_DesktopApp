@@ -509,12 +509,14 @@ function createTray() {
   // Set tray menu
   tray.setContextMenu(contextMenu);
   
-  // Handle tray icon click to show/hide window
+  // Handle tray icon click to show window (don't hide if already visible)
   tray.on('click', () => {
     if (mainWindow) {
       if (mainWindow.isVisible()) {
-        mainWindow.hide();
+        // Window is already visible, just focus it
+        mainWindow.focus();
       } else {
+        // Window is hidden, show it and focus
         mainWindow.show();
         mainWindow.focus();
       }
