@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   notificationCount: 0,
   currentState: 'Online', // Default state
+  position: { x: 1200, y: 20 }, // Default position
 };
 
 const floatingWidgetSlice = createSlice({
@@ -21,6 +22,9 @@ const floatingWidgetSlice = createSlice({
     setCurrentState: (state, action) => {
       state.currentState = action.payload;
     },
+    setPosition: (state, action) => {
+      state.position = action.payload;
+    },
   },
 });
 
@@ -29,6 +33,7 @@ export const {
   incrementNotificationCount,
   clearNotificationCount,
   setCurrentState,
+  setPosition,
 } = floatingWidgetSlice.actions;
 
 export default floatingWidgetSlice.reducer;

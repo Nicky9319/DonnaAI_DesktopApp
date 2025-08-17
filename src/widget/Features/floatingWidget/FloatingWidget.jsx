@@ -7,18 +7,21 @@ import {
   clearMessageCount, 
   setChatInterfaceVisible 
 } from '../store/uiVisibilitySlice';
+import { setPosition } from '../../store/slices/floatingWidgetSlice';
 
 
-// Use a constant for widget position to avoid disappearing on re-render
-const WIDGET_LEFT = 1200; // Set this to a safe value for your screen, e.g. 1200px from left
-const WIDGET_TOP = 20;
+
 
 const FloatingWidget = () => {
   const messageCount = useSelector((state) => state.uiVisibility.messageCount);
   const chatInterfaceVisible = useSelector((state) => state.uiVisibility.chatInterfaceVisible);
   const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
+  const position = useSelector((state) => state.floatingWidget.position);
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [hasDragged, setHasDragged] = useState(false);
   const dispatch = useDispatch();
 
   // Debug: Log when component mounts
@@ -43,7 +46,12 @@ const FloatingWidget = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [chatInterfaceVisible, messageCount]);
 
-  const handleWidgetClick = (e) => {
+    const handleWidgetClick = (e) => {
+    // Prevent click if we just finished dragging
+    if (hasDragged) {
+      return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
     console.log('🎯 Floating widget clicked! Event type:', e.type);
@@ -61,7 +69,7 @@ const FloatingWidget = () => {
       dispatch(clearMessageCount());
     }
     
-
+    
     
     console.log('✅ Chat interface visibility toggled to:', !chatInterfaceVisible);
     console.log('✅ Message count cleared');
@@ -75,21 +83,93 @@ const FloatingWidget = () => {
     setIsHovered(false);
   };
 
+  // Drag functionality
+  const handleMouseDown = (e) => {
+    // Only start dragging if clicking on the widget itself, not on buttons or other elements
+    if (e.target.closest('button') || e.target.closest('svg')) {
+      return;
+    }
+    
+    setIsDragging(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    // Set hasDragged to true when mouse moves during drag
+    setHasDragged(true);
+    
+    // Calculate widget dimensions
+    const widgetWidth = 50;
+    const widgetHeight = 50;
+    
+    // Keep widget within viewport bounds
+    const maxX = window.innerWidth - widgetWidth;
+    const maxY = window.innerHeight - widgetHeight;
+    
+    // Calculate new position based on mouse position and drag offset
+    let newX = e.clientX - dragOffset.x;
+    let newY = e.clientY - dragOffset.y;
+    
+    // Clamp position to viewport bounds
+    const clampedX = Math.max(0, Math.min(newX, maxX));
+    const clampedY = Math.max(0, Math.min(newY, maxY));
+    
+    // Only update position if it's within bounds
+    if (newX >= 0 && newX <= maxX && newY >= 0 && newY <= maxY) {
+      dispatch(setPosition({
+        x: newX,
+        y: newY
+      }));
+    } else {
+      // If we're at the edge, stay at the clamped position
+      dispatch(setPosition({
+        x: clampedX,
+        y: clampedY
+      }));
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    // Reset hasDragged after a short delay to allow click to be processed
+    setTimeout(() => {
+      setHasDragged(false);
+    }, 10);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
+
   return (
     <>
       {/* Widget always visible at a fixed position */}
       <div style={{
         position: 'absolute',
-        left: WIDGET_LEFT,
-        top: WIDGET_TOP,
+        left: position.x || 1200,
+        top: position.y || 20,
         width: '50px',
         height: '50px',
         pointerEvents: 'auto',
-        cursor: 'pointer',
+        cursor: isDragging ? 'grabbing' : 'pointer',
         zIndex: 2147483647 // Maximum possible z-index
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
       >
         <div
           style={{
@@ -197,29 +277,29 @@ const FloatingWidget = () => {
         </div>
       </div>
 
-      {/* Hover text only visible when hovering over the widget */}
-      {isHovered && (
-        <div style={{
-          position: 'absolute',
-          left: WIDGET_LEFT,
-          top: WIDGET_TOP + 60,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 2147483646, // Just below the widget
-          animation: 'fadeIn 0.2s ease-in-out'
-        }}>
-          {chatInterfaceVisible ? 'Hide Chat' : 'Show Chat'} {notificationCount > 0 && `(${notificationCount} new)`}
-          <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
-            Ctrl+Shift+Space
-          </div>
-        </div>
-      )}
+             {/* Hover text only visible when hovering over the widget */}
+       {isHovered && (
+         <div style={{
+           position: 'absolute',
+           left: position.x || 1200,
+           top: (position.y || 20) + 60,
+           backgroundColor: 'rgba(0, 0, 0, 0.8)',
+           color: 'white',
+           padding: '8px 12px',
+           borderRadius: '6px',
+           fontSize: '14px',
+           fontWeight: 'bold',
+           whiteSpace: 'nowrap',
+           pointerEvents: 'none',
+           zIndex: 2147483646, // Just below the widget
+           animation: 'fadeIn 0.2s ease-in-out'
+         }}>
+           {chatInterfaceVisible ? 'Hide Chat' : 'Show Chat'} {notificationCount > 0 && `(${notificationCount} new)`}
+           <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
+             Ctrl+Shift+Space
+           </div>
+         </div>
+       )}
     </>
   );
 };

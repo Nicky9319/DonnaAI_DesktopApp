@@ -7,8 +7,9 @@ import { setChatInterfaceVisible } from '../store/uiVisibilitySlice';
 const ActionBar = () => {
   const dispatch = useDispatch();
   const chatInterfaceVisible = useSelector((state) => state.uiVisibility.chatInterfaceVisible);
+  const floatingWidgetPosition = useSelector((state) => state.floatingWidget.position);
   
-  const position = { x: 1200, y: 20 };
+  const position = floatingWidgetPosition || { x: 1200, y: 20 };
   const isNearRightEdge = position.x > window.innerWidth - 200;
   const barWidth = 140; // Much smaller width
   const safeLeft = isNearRightEdge ?
