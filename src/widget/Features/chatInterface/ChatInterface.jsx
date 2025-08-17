@@ -409,87 +409,39 @@ const ChatInterface = () => {
           </div>
         </div>
 
-        {/* Input Area */}
-        <div style={{
-          padding: '8px 12px',
-          borderTop: `1px solid ${themeColors.borderColor}`,
-          background: themeColors.secondaryBackground
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: '6px',
-            alignItems: 'flex-end'
-          }}>
-                                                                                                                            <textarea
-               ref={textareaRef}
-               value={inputValue}
-               onChange={handleInputChange}
-               onKeyPress={handleKeyPress}
-               onFocus={(e) => {
-                 e.target.style.borderColor = themeColors.primaryBlue;
-               }}
-               onBlur={(e) => {
-                 e.target.style.borderColor = themeColors.borderColor;
-               }}
-               placeholder="Type your message..."
-               style={{
-                 flex: 1,
-                 minHeight: '28px',
-                 maxHeight: '120px',
-                 padding: '6px 10px',
-                 border: `1px solid ${themeColors.borderColor}`,
-                 borderRadius: '14px',
-                 fontSize: '13px',
-                 resize: 'none',
-                 outline: 'none',
-                 fontFamily: 'inherit',
-                 background: themeColors.primaryBackground,
-                 color: themeColors.primaryText,
-                 transition: 'all 0.2s ease',
-                 lineHeight: '1.3',
-                 scrollbarWidth: 'thin',
-                 scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
-               }}
-               className="custom-textarea"
-             />
-            
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isTyping}
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                border: 'none',
-                background: inputValue.trim() && !isTyping ? themeColors.primaryBlue : themeColors.tertiaryBackground,
-                color: themeColors.primaryText,
-                cursor: inputValue.trim() && !isTyping ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                transform: inputValue.trim() && !isTyping ? 'scale(1)' : 'scale(0.9)',
-                flexShrink: 0
-              }}
-              onMouseEnter={(e) => {
-                if (inputValue.trim() && !isTyping) {
-                  e.target.style.background = '#0056CC';
-                  e.target.style.transform = 'scale(1.1)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (inputValue.trim() && !isTyping) {
-                  e.target.style.background = themeColors.primaryBlue;
-                  e.target.style.transform = 'scale(1)';
-                }
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+                 {/* Input Area */}
+         <div style={{
+           padding: '8px 12px',
+           borderTop: `1px solid ${themeColors.borderColor}`,
+           background: themeColors.secondaryBackground
+         }}>
+           <textarea
+             ref={textareaRef}
+             value={inputValue}
+             onChange={handleInputChange}
+             onKeyPress={handleKeyPress}
+             placeholder="Type your message... (Press Enter to send)"
+             style={{
+               width: '100%',
+               minHeight: '28px',
+               maxHeight: '120px',
+               padding: '6px 10px',
+               border: `1px solid ${inputValue.trim() ? themeColors.primaryBlue : themeColors.borderColor}`,
+               borderRadius: '14px',
+               fontSize: '13px',
+               resize: 'none',
+               outline: 'none',
+               fontFamily: 'inherit',
+               background: themeColors.primaryBackground,
+               color: themeColors.primaryText,
+               transition: 'all 0.2s ease',
+               lineHeight: '1.3',
+               scrollbarWidth: 'thin',
+               scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
+             }}
+             className="custom-textarea"
+           />
+         </div>
       </div>
     </HoverComponent>
   );
