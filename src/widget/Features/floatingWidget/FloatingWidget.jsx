@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
 import { themeColors } from '../common/utils/colors';
@@ -9,6 +9,25 @@ const WIDGET_TOP = 20;
 
 const FloatingWidget = () => {
   const messageCount = useSelector((state) => state.uiVisibility.messageCount);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleWidgetClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Floating widget clicked!');
+    console.log('Current message count:', messageCount);
+    console.log('Widget position:', { left: WIDGET_LEFT, top: WIDGET_TOP });
+    console.log('Click event:', e);
+    // Add more functionality here as needed
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
 
   return (
     <>
@@ -20,9 +39,12 @@ const FloatingWidget = () => {
         width: '50px',
         height: '50px',
         pointerEvents: 'auto',
-        cursor: 'grab',
+        cursor: 'pointer',
         zIndex: 2147483647 // Maximum possible z-index
-      }}>
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      >
         <div
           style={{
             width: '100%',
@@ -34,7 +56,7 @@ const FloatingWidget = () => {
           }}
         >
           {/* Black outer cover wrapped in HoverComponent */}
-          <HoverComponent>
+          <HoverComponent onClick={handleWidgetClick}>
             <div
               style={{
                 width: '40px',
@@ -44,13 +66,17 @@ const FloatingWidget = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-                border: `1px solid rgba(255, 255, 255, 0.15)`,
-                outline: `1px solid rgba(255, 255, 255, 0.1)`,
+                boxShadow: isHovered 
+                  ? '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.3)' 
+                  : '0 2px 10px rgba(0, 0, 0, 0.3)',
+                border: `1px solid ${isHovered ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.15)'}`,
+                outline: `1px solid ${isHovered ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
                 outlineOffset: '1px',
                 cursor: 'pointer',
                 position: 'relative',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                pointerEvents: 'auto'
               }}
             >
               {/* Notification Badge */}
@@ -89,7 +115,9 @@ const FloatingWidget = () => {
                   backgroundColor: themeColors.primaryBlue,
                   borderRadius: '50%',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: `0 0 15px ${themeColors.primaryBlue}66, 0 0 30px ${themeColors.primaryBlue}33, 0 0 45px ${themeColors.primaryBlue}1A`,
+                  boxShadow: isHovered 
+                    ? `0 0 25px ${themeColors.primaryBlue}99, 0 0 50px ${themeColors.primaryBlue}66, 0 0 75px ${themeColors.primaryBlue}33`
+                    : `0 0 15px ${themeColors.primaryBlue}66, 0 0 30px ${themeColors.primaryBlue}33, 0 0 45px ${themeColors.primaryBlue}1A`,
                   filter: 'blur(1px)',
                   pointerEvents: 'none',
                   position: 'relative',
@@ -119,23 +147,26 @@ const FloatingWidget = () => {
         </div>
       </div>
 
-      {/* Hover text always visible below the widget */}
-      <div style={{
-        position: 'absolute',
-        left: WIDGET_LEFT,
-        top: WIDGET_TOP + 60,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '8px 12px',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        whiteSpace: 'nowrap',
-        pointerEvents: 'none',
-        zIndex: 2147483646 // Just below the widget
-      }}>
-        Active
-      </div>
+      {/* Hover text only visible when hovering over the widget */}
+      {isHovered && (
+        <div style={{
+          position: 'absolute',
+          left: WIDGET_LEFT,
+          top: WIDGET_TOP + 60,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 2147483646, // Just below the widget
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          Active
+        </div>
+      )}
     </>
   );
 };
