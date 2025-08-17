@@ -6,7 +6,7 @@ let globalDisableTimeout = null
 
 // Makes wrapped region clickable even when the window is globally click-through
 // by enabling interaction on hover and disabling it when the pointer leaves.
-const HoverComponent = ({ children, className, style }) => {
+const HoverComponent = ({ children, className, style, onClick }) => {
 	const hoverDepthRef = useRef(0)
 
 	const enableInteraction = () => {
@@ -98,6 +98,16 @@ const HoverComponent = ({ children, className, style }) => {
 		enableInteraction()
 	}
 
+	const handleClick = (e) => {
+		// Ensure we are interactive when clicked
+		enableInteraction()
+		
+		// Call the onClick callback if provided
+		if (onClick && typeof onClick === 'function') {
+			onClick(e)
+		}
+	}
+
 	return (
 		<div
 			className={className}
@@ -105,6 +115,7 @@ const HoverComponent = ({ children, className, style }) => {
 			onPointerEnter={handlePointerEnter}
 			onPointerLeave={handlePointerLeave}
 			onPointerDown={handlePointerDown}
+			onClick={handleClick}
 		>
 			{children}
 		</div>
