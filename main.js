@@ -1,6 +1,6 @@
 // Imports and modules !!! ---------------------------------------------------------------------------------------------------
 
-import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from './resources/icon.png?asset'
@@ -37,7 +37,7 @@ import { execSync } from 'child_process';
 
 // Variables and constants !!! ---------------------------------------------------------------------------------------------------
 
-let mainWindow, store, widgetWindow;
+let mainWindow, store, widgetWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 
 log.transports.file.level = 'info';
@@ -130,8 +130,35 @@ ipcMain.handle('db:updateAgentEnv', async (event, agentId, varName, varValue) =>
 // Custom titlebar handlers
 ipcMain.handle('window:close', () => {
   if (mainWindow) {
-    mainWindow.close();
+    mainWindow.hide();
   }
+});
+
+ipcMain.handle('window:quit', () => {
+  // Set quitting flag to prevent window close event from hiding the window
+  app.isQuiting = true;
+  
+  // Clean up widget window first
+  if (widgetWindow && !widgetWindow.isDestroyed()) {
+    try {
+      widgetWindow.close();
+      widgetWindow = null;
+    } catch (error) {
+      console.error('Error closing widget window during quit:', error);
+    }
+  }
+  
+  // Clean up tray
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+  
+  // Unregister all shortcuts
+  globalShortcut.unregisterAll();
+  
+  // Quit the app
+  app.quit();
 });
 
 ipcMain.handle('window:minimize', () => {
@@ -418,6 +445,84 @@ async function waitForDockerPing() {
 }
 
 // Utility Functions Section END !!! --------------------------------------------------------------------------------
+
+// Tray Functions Section !!! -------------------------------------------------------------------------------------
+
+function createTray() {
+  // Create tray icon
+  tray = new Tray(icon);
+  
+  // Create tray menu
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show DonnaAI',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    {
+      label: 'Hide DonnaAI',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.hide();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        // Set quitting flag to prevent window close event from hiding the window
+        app.isQuiting = true;
+        
+        // Clean up widget window first
+        if (widgetWindow && !widgetWindow.isDestroyed()) {
+          try {
+            widgetWindow.close();
+            widgetWindow = null;
+          } catch (error) {
+            console.error('Error closing widget window during quit:', error);
+          }
+        }
+        
+        // Clean up tray
+        if (tray) {
+          tray.destroy();
+          tray = null;
+        }
+        
+        // Unregister all shortcuts
+        globalShortcut.unregisterAll();
+        
+        // Quit the app
+        app.quit();
+      }
+    }
+  ]);
+  
+  // Set tray tooltip
+  tray.setToolTip('DonnaAI Desktop App');
+  
+  // Set tray menu
+  tray.setContextMenu(contextMenu);
+  
+  // Handle tray icon click to show/hide window
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+}
+
+// Tray Functions Section END !!! ----------------------------------------------------------------------------------
 
 
 
@@ -890,6 +995,9 @@ app.on('second-instance', (event, argv) => {
 
 app.whenReady().then(async () => {
 
+  // Initialize quitting flag
+  app.isQuiting = false;
+
   // Single Instance Check 
   const AppLock = app.requestSingleInstanceLock();
   if (!AppLock) {app.exit(0);}
@@ -913,10 +1021,12 @@ app.whenReady().then(async () => {
       } else {
         widgetWindow.show();
         setTimeout(() => {
-          widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-          widgetWindow.setAlwaysOnTop(false); // Reset first
-          widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
-          widgetWindow.focus(); // Ensure focus
+          if (widgetWindow && !widgetWindow.isDestroyed()) {
+            widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+            widgetWindow.setAlwaysOnTop(false); // Reset first
+            widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+            widgetWindow.focus(); // Ensure focus
+          }
         }, 100);
         console.log('Widget shown');
       }
@@ -977,6 +1087,16 @@ app.whenReady().then(async () => {
 
   mainWindow.setMenuBarVisibility(false);
 
+  // Create tray
+  createTray();
+
+  // Handle window close event - hide instead of quit
+  mainWindow.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
 
   // Register Protocol with the Windows
 
@@ -995,7 +1115,11 @@ function createWidgetWindow() {
   // Check if widget window already exists and is not destroyed
   if (widgetWindow && !widgetWindow.isDestroyed()) {
     console.log('Widget window already exists, focusing it');
-    widgetWindow.focus();
+    try {
+      widgetWindow.focus();
+    } catch (error) {
+      console.error('Error focusing widget window:', error);
+    }
     return;
   }
 
@@ -1023,25 +1147,33 @@ function createWidgetWindow() {
   // Widget window event handlers
   widgetWindow.on('ready-to-show', () => {
     console.log('Widget window ready to show');
-    widgetWindow.hide();
-    widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-    widgetWindow.setAlwaysOnTop(true, 'screen-saver');
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.hide();
+      widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      widgetWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
   });
 
   widgetWindow.on('show', () => {
     console.log('Widget window shown, ensuring click-through');
-    widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-    widgetWindow.setAlwaysOnTop(true, 'screen-saver');
-    // Force focus and bring to front
-    setTimeout(() => {
-      widgetWindow.focus();
-      widgetWindow.setAlwaysOnTop(false); // Reset
-      widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
-    }, 50);
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      widgetWindow.setAlwaysOnTop(true, 'screen-saver');
+      // Force focus and bring to front
+      setTimeout(() => {
+        if (widgetWindow && !widgetWindow.isDestroyed()) {
+          widgetWindow.focus();
+          widgetWindow.setAlwaysOnTop(false); // Reset
+          widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+        }
+      }, 50);
+    }
   });
 
   widgetWindow.on('focus', () => {
-    widgetWindow.setAlwaysOnTop(true, 'screen-saver');
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
   });
 
   widgetWindow.on('closed', () => {
@@ -1303,6 +1435,15 @@ ipcMain.handle('widget:recreate', () => {
 app.on('will-quit' , async (event) => {
   event.preventDefault();
   console.log("Quitting The Application !!!");
+
+  // Set quitting flag
+  app.isQuiting = true;
+
+  // Clean up tray
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 
   // Clean up widget window
   if (widgetWindow && !widgetWindow.isDestroyed()) {

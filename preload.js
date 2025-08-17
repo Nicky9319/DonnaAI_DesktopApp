@@ -26,6 +26,7 @@ if (process.contextIsolated) {
 
     contextBridge.exposeInMainWorld('electronAPI', {
       closeApp: () => ipcRenderer.invoke('window:close'),
+      quitApp: () => ipcRenderer.invoke('window:quit'),
       minimizeApp: () => ipcRenderer.invoke('window:minimize'),
       maximizeApp: () => ipcRenderer.invoke('window:maximize'),
       enableInteraction: () => ipcRenderer.invoke('window:enableInteraction'),
@@ -59,6 +60,7 @@ else{
   }
   window.electronAPI = {
     closeApp: () => ipcRenderer.invoke('window:close'),
+    quitApp: () => ipcRenderer.invoke('window:quit'),
     minimizeApp: () => ipcRenderer.invoke('window:minimize'),
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
     enableInteraction: () => ipcRenderer.invoke('window:enableInteraction'),

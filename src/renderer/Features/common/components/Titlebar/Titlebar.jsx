@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Titlebar = () => {
+    const [showContextMenu, setShowContextMenu] = useState(false);
+    const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+
     const handleClose = () => {
         console.log('Close button clicked');
         if (window.electronAPI && window.electronAPI.closeApp) {
@@ -15,15 +18,37 @@ const Titlebar = () => {
         }
     };
 
+    const handleQuit = () => {
+        console.log('Quit button clicked');
+        if (window.electronAPI && window.electronAPI.quitApp) {
+            console.log('Calling electronAPI.quitApp()');
+            window.electronAPI.quitApp();
+        } else {
+            console.warn('Electron API not available. Cannot quit app.');
+        }
+    };
+
+    const handleContextMenu = (e) => {
+        e.preventDefault();
+        setContextMenuPosition({ x: e.clientX, y: e.clientY });
+        setShowContextMenu(true);
+    };
+
+    const handleClickOutside = () => {
+        setShowContextMenu(false);
+    };
+
     return (
         <div
-            className="w-full h-8 flex items-center justify-between px-3"
+            className="w-full h-8 flex items-center justify-between px-3 relative"
             style={{
                 backgroundColor: '#000000',
                 borderBottom: '1px solid #1C1C1E',
                 WebkitAppRegion: 'drag', // Makes the entire bar draggable
                 userSelect: 'none' // Prevents text selection
             }}
+            onContextMenu={handleContextMenu}
+            onClick={handleClickOutside}
         >
             {/* Left side - Close Button Only */}
             <div className="flex items-center">
@@ -66,6 +91,32 @@ const Titlebar = () => {
 
             {/* Right side - Empty for balance */}
             <div className="w-20"></div>
+
+            {/* Context Menu */}
+            {showContextMenu && (
+                <div
+                    className="absolute z-50 bg-gray-800 border border-gray-600 rounded-md shadow-lg py-1"
+                    style={{
+                        left: contextMenuPosition.x,
+                        top: contextMenuPosition.y,
+                        minWidth: '150px'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button
+                        onClick={handleClose}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                    >
+                        Close Window
+                    </button>
+                    <button
+                        onClick={handleQuit}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                    >
+                        Quit Application
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
