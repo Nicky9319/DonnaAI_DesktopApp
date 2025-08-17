@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   floatingWidgetVisible: true,
   actionBarVisible: true,
-  chatInterfaceVisible: true,
+  chatInterfaceVisible: false,
   allWidgetsVisible: true, // New state to control all widgets visibility
   messageCount: 0, // New state for message count notification
 };
