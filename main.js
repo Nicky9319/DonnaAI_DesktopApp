@@ -258,7 +258,7 @@ ipcMain.handle('widget:hide', () => {
   }
 });
 
-ipcMain.handle('widget:setIgnoreMouseEvents', (event, ignore, options) => {
+ipcMain.handle('widget:setIgnoreMouseEvents', async (event, ignore, options) => {
   try {
     if (widgetWindow && !widgetWindow.isDestroyed()) {
       // Handle the options parameter safely
@@ -1185,7 +1185,8 @@ function createWidgetWindow() {
 
   // Listen for mouse events to enable/disable click-through dynamically
   widgetWindow.webContents.on('dom-ready', () => {
-    widgetWindow.webContents.executeJavaScript(`
+    try {
+      widgetWindow.webContents.executeJavaScript(`
       // Track click-through state
       window.isClickThroughEnabled = false;
       
@@ -1309,16 +1310,17 @@ function createWidgetWindow() {
       // Start with click-through disabled to be safe
       window.disableClickThrough();
       
-      // Handle mouse events to dynamically enable/disable click-through
-      document.addEventListener('mouseover', (event) => {
-        const target = event.target;
-        console.log('Mouse over:', target.tagName, target.className, 'Interactive:', isInteractiveElement(target));
-        
-        // If hovering over an interactive element, disable click-through
-        if (isInteractiveElement(target)) {
-          window.disableClickThrough();
-        }
-      });
+             // Handle mouse events to dynamically enable/disable click-through
+       document.addEventListener('mouseover', (event) => {
+         const target = event.target;
+         // Only log basic info to avoid object cloning issues
+         console.log('Mouse over:', target.tagName, target.className);
+         
+         // If hovering over an interactive element, disable click-through
+         if (isInteractiveElement(target)) {
+           window.disableClickThrough();
+         }
+       });
       
       document.addEventListener('mouseout', (event) => {
         const target = event.target;
@@ -1331,20 +1333,21 @@ function createWidgetWindow() {
         }
       });
       
-      // Handle clicks - prevent default on interactive elements
-      document.addEventListener('click', (event) => {
-        const target = event.target;
-        console.log('Click detected on:', target.tagName, target.className, 'Interactive:', isInteractiveElement(target));
-        
-        if (isInteractiveElement(target)) {
-          // This is a click on interactive content, prevent it from passing through
-          event.stopPropagation();
-          console.log('Click on interactive element - preventing pass-through');
-        } else {
-          // This is a click on non-interactive area, let it pass through
-          console.log('Click on non-interactive area - allowing pass-through');
-        }
-      });
+             // Handle clicks - prevent default on interactive elements
+       document.addEventListener('click', (event) => {
+         const target = event.target;
+         // Only log basic info to avoid object cloning issues
+         console.log('Click detected on:', target.tagName, target.className);
+         
+         if (isInteractiveElement(target)) {
+           // This is a click on interactive content, prevent it from passing through
+           event.stopPropagation();
+           console.log('Click on interactive element - preventing pass-through');
+         } else {
+           // This is a click on non-interactive area, let it pass through
+           console.log('Click on non-interactive area - allowing pass-through');
+         }
+       });
       
       // Handle mousedown events
       document.addEventListener('mousedown', (event) => {
@@ -1377,10 +1380,15 @@ function createWidgetWindow() {
       window.markAsNonInteractive = (element) => {
         if (element) {
           element.classList.add('widget-click-through');
-        }
-      };
-    `);
-  });
+                 }
+       };
+     `).catch(error => {
+       console.error('Error executing JavaScript in widget window:', error);
+     });
+   } catch (error) {
+     console.error('Error setting up widget window event handlers:', error);
+   }
+   });
 
   // Load the widget window with proper React support
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
