@@ -60,17 +60,38 @@ const ChatInterface = () => {
   const handleMouseMove = (e) => {
     if (!isDragging) return;
     
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
+    // Calculate widget dimensions using the same values as the component
+    const chatWidth = isExpanded ? 700 : 350;
+    const sidebarWidth = 40;
+    const totalWidth = chatWidth + sidebarWidth;
+    const widgetHeight = isExpanded ? 650 : 500;
     
-         // Keep widget within viewport bounds
-     const maxX = window.innerWidth - (isExpanded ? 740 : 390);
-     const maxY = window.innerHeight - (isExpanded ? 650 : 500);
+    // Keep widget within viewport bounds with consistent behavior
+    const maxX = window.innerWidth - totalWidth;
+    const maxY = window.innerHeight - widgetHeight;
     
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY))
-    });
+    // Calculate new position based on mouse position and drag offset
+    let newX = e.clientX - dragOffset.x;
+    let newY = e.clientY - dragOffset.y;
+    
+    // Clamp position to viewport bounds - this ensures consistent behavior for all edges
+    const clampedX = Math.max(0, Math.min(newX, maxX));
+    const clampedY = Math.max(0, Math.min(newY, maxY));
+    
+    // Only update position if it's within bounds or if we're at the edge
+    // This prevents snapping back when the mouse goes outside the window
+    if (newX >= 0 && newX <= maxX && newY >= 0 && newY <= maxY) {
+      setPosition({
+        x: newX,
+        y: newY
+      });
+    } else {
+      // If we're at the edge, stay at the clamped position
+      setPosition({
+        x: clampedX,
+        y: clampedY
+      });
+    }
   };
 
   const handleMouseUp = () => {
@@ -156,9 +177,10 @@ const ChatInterface = () => {
   };
 
   const sidebarWidth = 40;
-  const chatWidth = isExpanded ? '700px' : '350px';
+  const chatWidth = isExpanded ? 700 : 350;
   const chatHeight = isExpanded ? '650px' : '500px'; // Reduced height
   const messagesHeight = isExpanded ? '550px' : '400px'; // Reduced messages area
+  const totalWidth = chatWidth + sidebarWidth;
 
   return (
     <HoverComponent>
@@ -167,14 +189,14 @@ const ChatInterface = () => {
         style={{
           position: 'fixed',
           top: position.y || '120px',
-          left: position.x || `calc(50vw - ${parseInt(chatWidth) / 2 + sidebarWidth / 2}px)`,
+          left: position.x || `calc(50vw - ${totalWidth / 2}px)`,
           background: themeColors.primaryBackground,
           border: `1px solid ${themeColors.borderColor}`,
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
           zIndex: 10003,
           maxHeight: chatHeight,
-          width: `calc(${chatWidth} + ${sidebarWidth}px)`,
+          width: `${totalWidth}px`,
           overflow: 'hidden',
           animation: 'slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           pointerEvents: 'auto',
@@ -193,7 +215,7 @@ const ChatInterface = () => {
           {/* Vertical Sidebar */}
           <div style={{
             width: sidebarWidth,
-            background: themeColors.secondaryBackground,
+            background: themeColors.primaryBackground,
             borderRight: `1px solid ${themeColors.borderColor}`,
             display: 'flex',
             flexDirection: 'column',
@@ -204,29 +226,29 @@ const ChatInterface = () => {
             {/* Close Button */}
             <button
               onClick={handleClose}
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '6px',
-                border: 'none',
-                background: themeColors.tertiaryBackground,
-                color: themeColors.primaryText,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                fontSize: '10px',
-                marginBottom: '4px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = themeColors.errorRed;
-                e.target.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = themeColors.tertiaryBackground;
-                e.target.style.transform = 'scale(1)';
-              }}
+                             style={{
+                 width: '24px',
+                 height: '24px',
+                 borderRadius: '6px',
+                 border: 'none',
+                 background: themeColors.secondaryBackground,
+                 color: themeColors.primaryText,
+                 cursor: 'pointer',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 transition: 'all 0.2s',
+                 fontSize: '10px',
+                 marginBottom: '4px'
+               }}
+               onMouseEnter={(e) => {
+                 e.target.style.background = themeColors.errorRed;
+                 e.target.style.transform = 'scale(1.1)';
+               }}
+               onMouseLeave={(e) => {
+                 e.target.style.background = themeColors.secondaryBackground;
+                 e.target.style.transform = 'scale(1)';
+               }}
               title="Close"
             >
               ×
@@ -235,28 +257,28 @@ const ChatInterface = () => {
             {/* Expand Button */}
             <button
               onClick={handleExpand}
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '6px',
-                border: 'none',
-                background: themeColors.tertiaryBackground,
-                color: themeColors.primaryText,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                fontSize: '10px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = themeColors.hoverBackground;
-                e.target.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = themeColors.tertiaryBackground;
-                e.target.style.transform = 'scale(1)';
-              }}
+                             style={{
+                 width: '24px',
+                 height: '24px',
+                 borderRadius: '6px',
+                 border: 'none',
+                 background: themeColors.secondaryBackground,
+                 color: themeColors.primaryText,
+                 cursor: 'pointer',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 transition: 'all 0.2s',
+                 fontSize: '10px'
+               }}
+               onMouseEnter={(e) => {
+                 e.target.style.background = themeColors.primaryBlue;
+                 e.target.style.transform = 'scale(1.1)';
+               }}
+               onMouseLeave={(e) => {
+                 e.target.style.background = themeColors.secondaryBackground;
+                 e.target.style.transform = 'scale(1)';
+               }}
               title={isExpanded ? 'Collapse' : 'Expand'}
             >
               {isExpanded ? '−' : '+'}
@@ -267,7 +289,8 @@ const ChatInterface = () => {
           <div style={{
             flex: 1,
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            background: themeColors.primaryBackground
           }}>
             {/* Messages Area */}
             <div
@@ -280,7 +303,8 @@ const ChatInterface = () => {
                 flexDirection: 'column',
                 gap: '8px',
                 scrollbarWidth: 'thin',
-                scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
+                scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`,
+                background: themeColors.primaryBackground
               }}
             >
                              <style>
@@ -336,7 +360,7 @@ const ChatInterface = () => {
                      maxWidth: '80%',
                      padding: '8px 12px',
                      borderRadius: '12px',
-                     background: message.sender === 'user' ? themeColors.primaryBlue : themeColors.surfaceBackground,
+                     background: message.sender === 'user' ? themeColors.primaryBlue : themeColors.secondaryBackground,
                      color: themeColors.primaryText,
                      fontSize: '14px',
                      lineHeight: '1.4',
@@ -366,7 +390,7 @@ const ChatInterface = () => {
                      maxWidth: '80%',
                      padding: '8px 12px',
                      borderRadius: '12px',
-                     background: themeColors.surfaceBackground,
+                     background: themeColors.secondaryBackground,
                      color: themeColors.primaryText,
                      fontSize: '14px',
                      lineHeight: '1.4'
@@ -413,7 +437,7 @@ const ChatInterface = () => {
          <div style={{
            padding: '8px 12px',
            borderTop: `1px solid ${themeColors.borderColor}`,
-           background: themeColors.secondaryBackground
+           background: themeColors.primaryBackground
          }}>
            <textarea
              ref={textareaRef}
@@ -432,12 +456,12 @@ const ChatInterface = () => {
                resize: 'none',
                outline: 'none',
                fontFamily: 'inherit',
-               background: themeColors.primaryBackground,
+               background: themeColors.secondaryBackground,
                color: themeColors.primaryText,
                transition: 'all 0.2s ease',
                lineHeight: '1.3',
                scrollbarWidth: 'thin',
-               scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
+               scrollbarColor: `${themeColors.borderColor} ${themeColors.secondaryBackground}`
              }}
              className="custom-textarea"
            />
