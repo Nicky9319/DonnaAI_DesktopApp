@@ -1,23 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
 import { themeColors } from '../common/utils/colors';
 import { setChatInterfaceVisible } from '../store/uiVisibilitySlice';
+import { 
+  addMessage, 
+  setIsExpanded, 
+  setPosition, 
+  setIsTyping 
+} from '../store/chatStateSlice';
 
 const ChatInterface = () => {
   const dispatch = useDispatch();
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hello! How can I help you today?",
-      sender: 'assistant',
-      timestamp: new Date(Date.now() - 60000) // 1 minute ago
-    }
-  ]);
+  
+  // Get state from Redux
+  const { messages, isExpanded, position, isTyping } = useSelector(state => state.chatState);
+  
+  // Local state for UI interactions
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const messagesEndRef = useRef(null);
@@ -81,16 +81,16 @@ const ChatInterface = () => {
     // Only update position if it's within bounds or if we're at the edge
     // This prevents snapping back when the mouse goes outside the window
     if (newX >= 0 && newX <= maxX && newY >= 0 && newY <= maxY) {
-      setPosition({
+      dispatch(setPosition({
         x: newX,
         y: newY
-      });
+      }));
     } else {
       // If we're at the edge, stay at the clamped position
-      setPosition({
+      dispatch(setPosition({
         x: clampedX,
         y: clampedY
-      });
+      }));
     }
   };
 
@@ -126,12 +126,12 @@ const ChatInterface = () => {
         id: Date.now(),
         text: inputValue.trim(),
         sender: 'user',
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      dispatch(addMessage(newMessage));
       setInputValue('');
-      setIsTyping(true);
+      dispatch(setIsTyping(true));
 
       // Simulate assistant response after 1-2 seconds
       setTimeout(() => {
@@ -151,11 +151,11 @@ const ChatInterface = () => {
           id: Date.now() + 1,
           text: randomResponse,
           sender: 'assistant',
-          timestamp: new Date()
+          timestamp: new Date().toISOString()
         };
 
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsTyping(false);
+        dispatch(addMessage(assistantMessage));
+        dispatch(setIsTyping(false));
       }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
     }
   };
@@ -165,11 +165,12 @@ const ChatInterface = () => {
   };
 
   const handleExpand = () => {
-    setIsExpanded(!isExpanded);
+    dispatch(setIsExpanded(!isExpanded));
   };
 
   const formatTime = (timestamp) => {
-    return timestamp.toLocaleTimeString('en-US', { 
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false 
