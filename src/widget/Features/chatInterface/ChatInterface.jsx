@@ -16,6 +16,7 @@ const ChatInterface = () => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -93,6 +94,10 @@ const ChatInterface = () => {
     dispatch(setChatInterfaceVisible(false));
   };
 
+  const handleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   const formatTime = (timestamp) => {
     return timestamp.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
@@ -101,20 +106,25 @@ const ChatInterface = () => {
     });
   };
 
+  const sidebarWidth = 40;
+  const chatWidth = isExpanded ? '500px' : '350px';
+  const chatHeight = isExpanded ? '500px' : '400px';
+  const messagesHeight = isExpanded ? '400px' : '300px';
+
   return (
     <HoverComponent>
       <div
         style={{
           position: 'fixed',
           top: '120px',
-          left: 'calc(50vw - 175px)',
+          left: `calc(50vw - ${parseInt(chatWidth) / 2 + sidebarWidth / 2}px)`,
           background: themeColors.primaryBackground,
           border: `1px solid ${themeColors.borderColor}`,
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
           zIndex: 10003,
-          maxHeight: '400px',
-          width: '350px',
+          maxHeight: chatHeight,
+          width: `calc(${chatWidth} + ${sidebarWidth}px)`,
           overflow: 'hidden',
           animation: 'slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           pointerEvents: 'auto',
@@ -122,156 +132,241 @@ const ChatInterface = () => {
           flexDirection: 'column'
         }}
       >
-        {/* Close button for dropdown */}
-        <button
-          onClick={handleClose}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            background: themeColors.tertiaryBackground,
-            border: 'none',
-            borderRadius: '50%',
-            width: '20px',
-            height: '20px',
-            color: themeColors.primaryText,
-            fontSize: '12px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            zIndex: 10004
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = themeColors.hoverBackground;
-            e.target.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = themeColors.tertiaryBackground;
-            e.target.style.transform = 'scale(1)';
-          }}
-        >
-          ×
-        </button>
-
-        {/* Messages Area */}
-        <div
-          className="messages-container"
-          style={{
-            height: '300px',
-            overflowY: 'auto',
-            padding: '12px',
+        {/* Messages Area with Sidebar */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          height: messagesHeight
+        }}>
+          {/* Vertical Sidebar */}
+          <div style={{
+            width: sidebarWidth,
+            background: themeColors.secondaryBackground,
+            borderRight: `1px solid ${themeColors.borderColor}`,
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
-          }}
-        >
-          <style>
-            {`
-              .messages-container::-webkit-scrollbar {
-                width: 6px;
-              }
-              .messages-container::-webkit-scrollbar-track {
-                background: ${themeColors.primaryBackground};
-                border-radius: 3px;
-              }
-              .messages-container::-webkit-scrollbar-thumb {
-                background: ${themeColors.borderColor};
-                border-radius: 3px;
-                transition: background 0.2s;
-              }
-              .messages-container::-webkit-scrollbar-thumb:hover {
-                background: ${themeColors.tertiaryBackground};
-              }
-            `}
-          </style>
+            alignItems: 'center',
+            padding: '8px 0',
+            gap: '8px'
+          }}>
+            {/* Expand/Collapse Button */}
+            <button
+              onClick={handleExpand}
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '6px',
+                border: 'none',
+                background: themeColors.tertiaryBackground,
+                color: themeColors.primaryText,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                fontSize: '10px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = themeColors.hoverBackground;
+                e.target.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = themeColors.tertiaryBackground;
+                e.target.style.transform = 'scale(1)';
+              }}
+              title={isExpanded ? 'Collapse' : 'Expand'}
+            >
+              {isExpanded ? '−' : '+'}
+            </button>
 
-          {/* Messages */}
-          {messages.map((message) => (
-            <div 
-              key={message.id}
-              style={{ 
-                display: 'flex', 
-                justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start', 
-                animation: 'messageSlideIn 0.3s ease-out' 
+            {/* Close Button */}
+            <button
+              onClick={handleClose}
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '6px',
+                border: 'none',
+                background: themeColors.tertiaryBackground,
+                color: themeColors.primaryText,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                fontSize: '10px'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = themeColors.errorRed;
+                e.target.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = themeColors.tertiaryBackground;
+                e.target.style.transform = 'scale(1)';
+              }}
+              title="Close"
+            >
+              ×
+            </button>
+
+            {/* Settings Button (placeholder for future features) */}
+            <button
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '6px',
+                border: 'none',
+                background: themeColors.tertiaryBackground,
+                color: themeColors.primaryText,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                fontSize: '10px',
+                opacity: 0.6
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = themeColors.hoverBackground;
+                e.target.style.transform = 'scale(1.1)';
+                e.target.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = themeColors.tertiaryBackground;
+                e.target.style.transform = 'scale(1)';
+                e.target.style.opacity = '0.6';
+              }}
+              title="Settings (Coming Soon)"
+            >
+              ⚙
+            </button>
+          </div>
+
+          {/* Messages Container */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Messages Area */}
+            <div
+              className="messages-container"
+              style={{
+                height: messagesHeight,
+                overflowY: 'auto',
+                padding: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                scrollbarWidth: 'thin',
+                scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
               }}
             >
-              <div style={{
-                maxWidth: '80%',
-                padding: '8px 12px',
-                borderRadius: '12px',
-                background: message.sender === 'user' ? themeColors.primaryBlue : themeColors.surfaceBackground,
-                color: themeColors.primaryText,
-                fontSize: '12px',
-                lineHeight: '1.4',
-                wordWrap: 'break-word'
-              }}>
-                {message.text}
-                <div style={{
-                  fontSize: '10px',
-                  opacity: 0.7,
-                  marginTop: '4px',
-                  textAlign: message.sender === 'user' ? 'right' : 'left'
-                }}>
-                  {formatTime(message.timestamp)}
-                </div>
-              </div>
-            </div>
-          ))}
+              <style>
+                {`
+                  .messages-container::-webkit-scrollbar {
+                    width: 6px;
+                  }
+                  .messages-container::-webkit-scrollbar-track {
+                    background: ${themeColors.primaryBackground};
+                    border-radius: 3px;
+                  }
+                  .messages-container::-webkit-scrollbar-thumb {
+                    background: ${themeColors.borderColor};
+                    border-radius: 3px;
+                    transition: background 0.2s;
+                  }
+                  .messages-container::-webkit-scrollbar-thumb:hover {
+                    background: ${themeColors.tertiaryBackground};
+                  }
+                `}
+              </style>
 
-          {/* Typing indicator */}
-          {isTyping && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-start', 
-              animation: 'messageSlideIn 0.3s ease-out' 
-            }}>
-              <div style={{
-                maxWidth: '80%',
-                padding: '8px 12px',
-                borderRadius: '12px',
-                background: themeColors.surfaceBackground,
-                color: themeColors.primaryText,
-                fontSize: '12px',
-                lineHeight: '1.4'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <div style={{ fontSize: '10px', opacity: 0.7 }}>Assistant is typing</div>
-                  <div style={{ display: 'flex', gap: '2px' }}>
+              {/* Messages */}
+              {messages.map((message) => (
+                <div 
+                  key={message.id}
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start', 
+                    animation: 'messageSlideIn 0.3s ease-out' 
+                  }}
+                >
+                  <div style={{
+                    maxWidth: '80%',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    background: message.sender === 'user' ? themeColors.primaryBlue : themeColors.surfaceBackground,
+                    color: themeColors.primaryText,
+                    fontSize: '12px',
+                    lineHeight: '1.4',
+                    wordWrap: 'break-word'
+                  }}>
+                    {message.text}
                     <div style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      background: themeColors.primaryText,
+                      fontSize: '10px',
                       opacity: 0.7,
-                      animation: 'typing 1.4s infinite'
-                    }} />
-                    <div style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      background: themeColors.primaryText,
-                      opacity: 0.7,
-                      animation: 'typing 1.4s infinite 0.2s'
-                    }} />
-                    <div style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      background: themeColors.primaryText,
-                      opacity: 0.7,
-                      animation: 'typing 1.4s infinite 0.4s'
-                    }} />
+                      marginTop: '4px',
+                      textAlign: message.sender === 'user' ? 'right' : 'left'
+                    }}>
+                      {formatTime(message.timestamp)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
+              ))}
 
-          <div ref={messagesEndRef} />
+              {/* Typing indicator */}
+              {isTyping && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'flex-start', 
+                  animation: 'messageSlideIn 0.3s ease-out' 
+                }}>
+                  <div style={{
+                    maxWidth: '80%',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    background: themeColors.surfaceBackground,
+                    color: themeColors.primaryText,
+                    fontSize: '12px',
+                    lineHeight: '1.4'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '10px', opacity: 0.7 }}>Assistant is typing</div>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        <div style={{
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '50%',
+                          background: themeColors.primaryText,
+                          opacity: 0.7,
+                          animation: 'typing 1.4s infinite'
+                        }} />
+                        <div style={{
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '50%',
+                          background: themeColors.primaryText,
+                          opacity: 0.7,
+                          animation: 'typing 1.4s infinite 0.2s'
+                        }} />
+                        <div style={{
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '50%',
+                          background: themeColors.primaryText,
+                          opacity: 0.7,
+                          animation: 'typing 1.4s infinite 0.4s'
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
         </div>
 
         {/* Input Area */}
