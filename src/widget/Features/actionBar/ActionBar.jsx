@@ -1,7 +1,13 @@
 import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFloatingWidgetVisible, setActionBarVisible, setChatInterfaceVisible } from '../store/uiVisibilitySlice';
 import HoverComponent from '../common/components/HoverComponent';
 
 const ActionBar = () => {
+  const dispatch = useDispatch();
+  const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible } = useSelector(
+    (state) => state.uiVisibility
+  );
   const position = { x: 1200, y: 20 };
   const isNearRightEdge = position.x > window.innerWidth - 300;
   const barWidth = 220;
@@ -94,6 +100,50 @@ const ActionBar = () => {
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
             Thread
+          </button>
+
+          {/* Toggle Widget Button */}
+          <button 
+            onClick={() => dispatch(setFloatingWidgetVisible(!floatingWidgetVisible))}
+            style={{
+              background: floatingWidgetVisible ? '#007AFF' : '#2D2D2F',
+              border: 'none',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              color: '#FFFFFF',
+              fontSize: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: '4px'
+            }}
+            title={floatingWidgetVisible ? 'Hide Widget' : 'Show Widget'}
+          >
+            W
+          </button>
+
+          {/* Toggle Chat Button */}
+          <button 
+            onClick={() => dispatch(setChatInterfaceVisible(!chatInterfaceVisible))}
+            style={{
+              background: chatInterfaceVisible ? '#00D09C' : '#2D2D2F',
+              border: 'none',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              color: '#FFFFFF',
+              fontSize: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: '4px'
+            }}
+            title={chatInterfaceVisible ? 'Hide Chat' : 'Show Chat'}
+          >
+            C
           </button>
 
           {/* Close button */}

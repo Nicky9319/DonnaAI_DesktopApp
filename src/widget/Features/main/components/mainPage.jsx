@@ -1,14 +1,19 @@
 import React from 'react'
+import { useSelector } from 'react-redux'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
 const MainPage = () => {
+  const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible } = useSelector(
+    (state) => state.uiVisibility
+  );
+
   return (
     <>
-      <FloatingWidget />
-      <ActionBar />
-      <ChatInterface />
+      {floatingWidgetVisible && <FloatingWidget />}
+      {actionBarVisible && <ActionBar />}
+      {chatInterfaceVisible && <ChatInterface />}
     </>
   );
 };

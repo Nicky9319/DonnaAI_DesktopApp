@@ -8,7 +8,7 @@ const initialState = {
 
 const uiVisibilitySlice = createSlice({
   name: 'uiVisibility',
-  j,
+  initialState,
   reducers: {
     setFloatingWidgetVisible(state, action) {
       state.floatingWidgetVisible = action.payload;
