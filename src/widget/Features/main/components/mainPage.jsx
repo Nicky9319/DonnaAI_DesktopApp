@@ -5,24 +5,25 @@ import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
 const MainPage = () => {
-  const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible } = useSelector(
+  const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible } = useSelector(
     (state) => state.uiVisibility
   );
 
   // Local state to handle smooth transitions
   const [localVisibility, setLocalVisibility] = useState({
-    floatingWidget: floatingWidgetVisible,
-    actionBar: actionBarVisible,
-    chatInterface: chatInterfaceVisible
+    floatingWidget: floatingWidgetVisible && allWidgetsVisible,
+    actionBar: actionBarVisible && allWidgetsVisible,
+    chatInterface: chatInterfaceVisible && allWidgetsVisible
   });
 
   // useEffect to handle visibility state changes with smooth transitions
   useEffect(() => {
     const timeoutIds = [];
 
-    // Handle floating widget visibility
-    if (floatingWidgetVisible !== localVisibility.floatingWidget) {
-      if (floatingWidgetVisible) {
+    // Handle floating widget visibility (considering both individual and global state)
+    const shouldShowFloatingWidget = floatingWidgetVisible && allWidgetsVisible;
+    if (shouldShowFloatingWidget !== localVisibility.floatingWidget) {
+      if (shouldShowFloatingWidget) {
         // Show immediately
         setLocalVisibility(prev => ({ ...prev, floatingWidget: true }));
       } else {
@@ -34,9 +35,10 @@ const MainPage = () => {
       }
     }
 
-    // Handle action bar visibility
-    if (actionBarVisible !== localVisibility.actionBar) {
-      if (actionBarVisible) {
+    // Handle action bar visibility (considering both individual and global state)
+    const shouldShowActionBar = actionBarVisible && allWidgetsVisible;
+    if (shouldShowActionBar !== localVisibility.actionBar) {
+      if (shouldShowActionBar) {
         setLocalVisibility(prev => ({ ...prev, actionBar: true }));
       } else {
         const timeoutId = setTimeout(() => {
@@ -46,9 +48,10 @@ const MainPage = () => {
       }
     }
 
-    // Handle chat interface visibility
-    if (chatInterfaceVisible !== localVisibility.chatInterface) {
-      if (chatInterfaceVisible) {
+    // Handle chat interface visibility (considering both individual and global state)
+    const shouldShowChatInterface = chatInterfaceVisible && allWidgetsVisible;
+    if (shouldShowChatInterface !== localVisibility.chatInterface) {
+      if (shouldShowChatInterface) {
         setLocalVisibility(prev => ({ ...prev, chatInterface: true }));
       } else {
         const timeoutId = setTimeout(() => {
@@ -62,16 +65,31 @@ const MainPage = () => {
     return () => {
       timeoutIds.forEach(id => clearTimeout(id));
     };
-  }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, localVisibility]);
+  }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
 
   return (
     <>
+      {/* Dummy transparent screen that covers the whole browser window when all widgets are hidden */}
+      {!allWidgetsVisible && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'transparent',
+          zIndex: 1, // Low z-index to stay behind other widgets
+          pointerEvents: 'none' // Allow clicks to pass through
+        }} />
+      )}
+      
       {localVisibility.floatingWidget && (
         <div style={{
-          opacity: floatingWidgetVisible ? 1 : 0,
+          opacity: (floatingWidgetVisible && allWidgetsVisible) ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: floatingWidgetVisible ? 'scale(1)' : 'scale(0.95)',
-          transitionProperty: 'opacity, transform'
+          transform: (floatingWidgetVisible && allWidgetsVisible) ? 'scale(1)' : 'scale(0.95)',
+          transitionProperty: 'opacity, transform',
+          pointerEvents: (floatingWidgetVisible && allWidgetsVisible) ? 'auto' : 'none'
         }}>
           <FloatingWidget />
         </div>
@@ -79,10 +97,11 @@ const MainPage = () => {
       
       {localVisibility.actionBar && (
         <div style={{
-          opacity: actionBarVisible ? 1 : 0,
+          opacity: (actionBarVisible && allWidgetsVisible) ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: actionBarVisible ? 'translateY(0)' : 'translateY(-10px)',
-          transitionProperty: 'opacity, transform'
+          transform: (actionBarVisible && allWidgetsVisible) ? 'translateY(0)' : 'translateY(-10px)',
+          transitionProperty: 'opacity, transform',
+          pointerEvents: (actionBarVisible && allWidgetsVisible) ? 'auto' : 'none'
         }}>
           <ActionBar />
         </div>
@@ -90,10 +109,11 @@ const MainPage = () => {
       
       {localVisibility.chatInterface && (
         <div style={{
-          opacity: chatInterfaceVisible ? 1 : 0,
+          opacity: (chatInterfaceVisible && allWidgetsVisible) ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: chatInterfaceVisible ? 'scale(1)' : 'scale(0.98)',
-          transitionProperty: 'opacity, transform'
+          transform: (chatInterfaceVisible && allWidgetsVisible) ? 'scale(1)' : 'scale(0.98)',
+          transitionProperty: 'opacity, transform',
+          pointerEvents: (chatInterfaceVisible && allWidgetsVisible) ? 'auto' : 'none'
         }}>
           <ChatInterface />
         </div>
