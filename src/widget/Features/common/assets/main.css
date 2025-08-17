@@ -142,11 +142,22 @@ body {
   0%, 100% {
     transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 20px rgba(0, 122, 255, 0.6), 0 0 40px rgba(0, 122, 255, 0.3), 0 0 60px rgba(0, 122, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2), 0 0 45px rgba(0, 122, 255, 0.1);
   }
   50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-    box-shadow: 0 0 30px rgba(0, 122, 255, 0.8), 0 0 60px rgba(0, 122, 255, 0.5), 0 0 90px rgba(0, 122, 255, 0.2);
+    transform: scale(1.03);
+    opacity: 0.85;
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.5), 0 0 40px rgba(0, 122, 255, 0.3), 0 0 60px rgba(0, 122, 255, 0.15);
+  }
+}
+
+@keyframes heartbeatColor {
+  0%, 100% {
+    background-color: #007AFF;
+    filter: blur(8px);
+  }
+  50% {
+    background-color: #000000;
+    filter: blur(1px);
   }
 }

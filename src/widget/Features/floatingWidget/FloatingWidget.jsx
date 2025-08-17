@@ -50,16 +50,36 @@ const FloatingWidget = () => {
               {/* Blue inner circle */}
               <div
                 style={{
-                  width: '25px',
-                  height: '25px',
+                  width: '15px',
+                  height: '15px',
                   backgroundColor: '#007AFF',
                   borderRadius: '50%',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 0 20px rgba(0, 122, 255, 0.6), 0 0 40px rgba(0, 122, 255, 0.3), 0 0 60px rgba(0, 122, 255, 0.1)',
+                  boxShadow: '0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2), 0 0 45px rgba(0, 122, 255, 0.1)',
                   filter: 'blur(1px)',
-                  pointerEvents: 'none'
+                  pointerEvents: 'none',
+                  position: 'relative',
+                  animation: 'heartbeatColor 2s ease-in-out infinite'
                 }}
-              />
+              >
+                {/* Additional glow layer for enhanced heartbeat effect */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '-2px',
+                    width: '19px',
+                    height: '19px',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(0, 122, 255, 0.25) 0%, rgba(0, 122, 255, 0.08) 70%, transparent 100%)',
+                    filter: 'blur(4px)',
+                    animation: 'heartbeat 2s ease-in-out infinite',
+                    animationDelay: '0.5s',
+                    pointerEvents: 'none',
+                    zIndex: 0
+                  }}
+                />
+              </div>
             </div>
           </HoverComponent>
         </div>
