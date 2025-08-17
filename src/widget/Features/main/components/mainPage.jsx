@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import { incrementMessageCount, clearMessageCount } from '../../store/uiVisibilitySlice'
+import { themeColors } from '../../common/utils/colors'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
 const MainPage = () => {
-  const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible } = useSelector(
+  const dispatch = useDispatch();
+  const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, messageCount } = useSelector(
     (state) => state.uiVisibility
   );
 
@@ -84,6 +87,56 @@ const MainPage = () => {
 
   return (
     <>
+      {/* Test Controls for Notification Badge */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        left: '10px',
+        zIndex: 9999,
+        backgroundColor: themeColors.modalBackground,
+        padding: '10px',
+        borderRadius: '8px',
+        color: themeColors.primaryText,
+        fontSize: '12px',
+        border: `1px solid ${themeColors.borderColor}`
+      }}>
+        <div>Message Count: {messageCount}</div>
+        <button 
+          onClick={() => dispatch(incrementMessageCount())}
+          style={{
+            margin: '5px',
+            padding: '5px 10px',
+            backgroundColor: themeColors.primaryBlue,
+            color: themeColors.primaryText,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.hoverBackground}
+          onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.primaryBlue}
+        >
+          Add Message
+        </button>
+        <button 
+          onClick={() => dispatch(clearMessageCount())}
+          style={{
+            margin: '5px',
+            padding: '5px 10px',
+            backgroundColor: themeColors.mutedText,
+            color: themeColors.primaryText,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.hoverBackground}
+          onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.mutedText}
+        >
+          Clear
+        </button>
+      </div>
+
       {localVisibility.floatingWidget && (
         <div style={{
           opacity: (floatingWidgetVisible && allWidgetsVisible) ? 1 : 0,

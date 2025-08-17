@@ -5,6 +5,7 @@ const initialState = {
   actionBarVisible: true,
   chatInterfaceVisible: true,
   allWidgetsVisible: true, // New state to control all widgets visibility
+  messageCount: 0, // New state for message count notification
 };
 
 const uiVisibilitySlice = createSlice({
@@ -45,6 +46,15 @@ const uiVisibilitySlice = createSlice({
       state.actionBarVisible = action.payload;
       state.chatInterfaceVisible = action.payload;
     },
+    setMessageCount(state, action) {
+      state.messageCount = action.payload;
+    },
+    incrementMessageCount(state) {
+      state.messageCount += 1;
+    },
+    clearMessageCount(state) {
+      state.messageCount = 0;
+    },
   },
 });
 
@@ -56,6 +66,9 @@ export const {
   hideAllWidgets,
   toggleAllWidgets,
   setAllWidgetsVisible,
+  setMessageCount,
+  incrementMessageCount,
+  clearMessageCount,
 } = uiVisibilitySlice.actions;
 
 export default uiVisibilitySlice.reducer;
