@@ -50,8 +50,8 @@ const FloatingWidget = () => {
               {/* Blue inner circle */}
               <div
                 style={{
-                  width: '15px',
-                  height: '15px',
+                  width: '20px',
+                  height: '20px',
                   backgroundColor: '#007AFF',
                   borderRadius: '50%',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -66,10 +66,10 @@ const FloatingWidget = () => {
                 <div
                   style={{
                     position: 'absolute',
-                    top: '-2px',
-                    left: '-2px',
-                    width: '19px',
-                    height: '19px',
+                    top: '-3px',
+                    left: '-3px',
+                    width: '26px',
+                    height: '26px',
                     borderRadius: '50%',
                     background: 'radial-gradient(circle, rgba(0, 122, 255, 0.25) 0%, rgba(0, 122, 255, 0.08) 70%, transparent 100%)',
                     filter: 'blur(4px)',

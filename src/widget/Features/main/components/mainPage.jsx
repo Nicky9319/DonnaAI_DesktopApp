@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { toggleAllWidgets } from '../../store/uiVisibilitySlice'
+import { useSelector } from 'react-redux'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
 const MainPage = () => {
-  const dispatch = useDispatch();
   const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible } = useSelector(
     (state) => state.uiVisibility
   );
@@ -18,22 +16,6 @@ const MainPage = () => {
     chatInterface: chatInterfaceVisible && allWidgetsVisible
   });
 
-  // Listen for toggle-widget-visibility event from main process
-  useEffect(() => {
-    const handleToggleVisibility = () => {
-      console.log('Toggle widget visibility event received');
-      dispatch(toggleAllWidgets());
-    };
-
-    // Add event listener for the custom event
-    window.addEventListener('toggle-widget-visibility', handleToggleVisibility);
-
-    // Cleanup event listener on unmount
-    return () => {
-      window.removeEventListener('toggle-widget-visibility', handleToggleVisibility);
-    };
-  }, [dispatch]);
-
   // Handle click-through based on allWidgetsVisible state
   useEffect(() => {
     if (window.widgetAPI) {
@@ -41,65 +23,11 @@ const MainPage = () => {
         // Enable click-through when all widgets are hidden
         window.widgetAPI.enableClickThrough();
         console.log('Click-through enabled - all widgets hidden');
-        
-        // Also mark the entire document body as non-interactive
-        if (window.markAsNonInteractive && document.body) {
-          window.markAsNonInteractive(document.body);
-        }
-        
-        // Add CSS class to body for additional click-through enforcement
-        document.body.classList.add('all-widgets-hidden');
-        document.body.style.pointerEvents = 'none';
       } else {
         // Disable click-through when widgets are visible
         window.widgetAPI.disableClickThrough();
         console.log('Click-through disabled - widgets visible');
-        
-        // Remove non-interactive marking from body
-        if (document.body) {
-          document.body.classList.remove('widget-click-through');
-          document.body.classList.remove('all-widgets-hidden');
-          document.body.style.pointerEvents = 'auto';
-        }
       }
-    }
-  }, [allWidgetsVisible]);
-
-  // Force click-through state when all widgets are hidden
-  useEffect(() => {
-    if (!allWidgetsVisible && window.enableClickThrough) {
-      // Force enable click-through and keep it enabled
-      const forceClickThrough = () => {
-        if (!allWidgetsVisible) {
-          window.enableClickThrough();
-          
-          // Also force disable pointer events on all elements
-          const allElements = document.querySelectorAll('*');
-          allElements.forEach(element => {
-            if (!element.classList.contains('widget-interactive')) {
-              element.style.pointerEvents = 'none';
-            }
-          });
-        }
-      };
-      
-      // Force click-through immediately and set up periodic checks
-      forceClickThrough();
-      const interval = setInterval(forceClickThrough, 100); // Check every 100ms
-      
-      return () => {
-        clearInterval(interval);
-        
-        // Restore pointer events when component unmounts or state changes
-        if (allWidgetsVisible) {
-          const allElements = document.querySelectorAll('*');
-          allElements.forEach(element => {
-            if (!element.classList.contains('widget-click-through')) {
-              element.style.pointerEvents = '';
-            }
-          });
-        }
-      };
     }
   }, [allWidgetsVisible]);
 
