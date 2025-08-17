@@ -70,6 +70,7 @@ const FloatingWidget = () => {
                     justifyContent: 'center',
                     fontSize: '10px',
                     fontWeight: 'bold',
+                    fontFamily: 'Arial, sans-serif',
                     border: `1px solid rgba(255, 255, 255, 0.2)`,
                     outline: `1px solid rgba(255, 255, 255, 0.1)`,
                     outlineOffset: '1px',
