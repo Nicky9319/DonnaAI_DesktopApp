@@ -283,25 +283,44 @@ const ChatInterface = () => {
                 scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
               }}
             >
-              <style>
-                {`
-                  .messages-container::-webkit-scrollbar {
-                    width: 6px;
-                  }
-                  .messages-container::-webkit-scrollbar-track {
-                    background: ${themeColors.primaryBackground};
-                    border-radius: 3px;
-                  }
-                  .messages-container::-webkit-scrollbar-thumb {
-                    background: ${themeColors.borderColor};
-                    border-radius: 3px;
-                    transition: background 0.2s;
-                  }
-                  .messages-container::-webkit-scrollbar-thumb:hover {
-                    background: ${themeColors.tertiaryBackground};
-                  }
-                `}
-              </style>
+                             <style>
+                 {`
+                   .messages-container::-webkit-scrollbar {
+                     width: 6px;
+                   }
+                   .messages-container::-webkit-scrollbar-track {
+                     background: ${themeColors.primaryBackground};
+                     border-radius: 3px;
+                   }
+                   .messages-container::-webkit-scrollbar-thumb {
+                     background: ${themeColors.borderColor};
+                     border-radius: 3px;
+                     transition: background 0.2s;
+                   }
+                   .messages-container::-webkit-scrollbar-thumb:hover {
+                     background: ${themeColors.tertiaryBackground};
+                   }
+                   
+                   .custom-textarea::-webkit-scrollbar {
+                     width: 4px;
+                   }
+                   .custom-textarea::-webkit-scrollbar-track {
+                     background: ${themeColors.primaryBackground};
+                     border-radius: 2px;
+                   }
+                   .custom-textarea::-webkit-scrollbar-thumb {
+                     background: ${themeColors.borderColor};
+                     border-radius: 2px;
+                     transition: background 0.2s;
+                   }
+                   .custom-textarea::-webkit-scrollbar-thumb:hover {
+                     background: ${themeColors.tertiaryBackground};
+                   }
+                   .custom-textarea::-webkit-scrollbar-corner {
+                     background: ${themeColors.primaryBackground};
+                   }
+                 `}
+               </style>
 
               {/* Messages */}
               {messages.map((message) => (
@@ -313,26 +332,26 @@ const ChatInterface = () => {
                     animation: 'messageSlideIn 0.3s ease-out' 
                   }}
                 >
-                  <div style={{
-                    maxWidth: '80%',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    background: message.sender === 'user' ? themeColors.primaryBlue : themeColors.surfaceBackground,
-                    color: themeColors.primaryText,
-                    fontSize: '12px',
-                    lineHeight: '1.4',
-                    wordWrap: 'break-word'
-                  }}>
-                    {message.text}
-                    <div style={{
-                      fontSize: '10px',
-                      opacity: 0.7,
-                      marginTop: '4px',
-                      textAlign: message.sender === 'user' ? 'right' : 'left'
-                    }}>
-                      {formatTime(message.timestamp)}
-                    </div>
-                  </div>
+                                     <div style={{
+                     maxWidth: '80%',
+                     padding: '8px 12px',
+                     borderRadius: '12px',
+                     background: message.sender === 'user' ? themeColors.primaryBlue : themeColors.surfaceBackground,
+                     color: themeColors.primaryText,
+                     fontSize: '14px',
+                     lineHeight: '1.4',
+                     wordWrap: 'break-word'
+                   }}>
+                     {message.text}
+                     <div style={{
+                       fontSize: '11px',
+                       opacity: 0.7,
+                       marginTop: '4px',
+                       textAlign: message.sender === 'user' ? 'right' : 'left'
+                     }}>
+                       {formatTime(message.timestamp)}
+                     </div>
+                   </div>
                 </div>
               ))}
 
@@ -343,17 +362,17 @@ const ChatInterface = () => {
                   justifyContent: 'flex-start', 
                   animation: 'messageSlideIn 0.3s ease-out' 
                 }}>
-                  <div style={{
-                    maxWidth: '80%',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    background: themeColors.surfaceBackground,
-                    color: themeColors.primaryText,
-                    fontSize: '12px',
-                    lineHeight: '1.4'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <div style={{ fontSize: '10px', opacity: 0.7 }}>Assistant is typing</div>
+                                     <div style={{
+                     maxWidth: '80%',
+                     padding: '8px 12px',
+                     borderRadius: '12px',
+                     background: themeColors.surfaceBackground,
+                     color: themeColors.primaryText,
+                     fontSize: '14px',
+                     lineHeight: '1.4'
+                   }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                       <div style={{ fontSize: '11px', opacity: 0.7 }}>Assistant is typing</div>
                       <div style={{ display: 'flex', gap: '2px' }}>
                         <div style={{
                           width: '4px',
@@ -401,35 +420,39 @@ const ChatInterface = () => {
             gap: '6px',
             alignItems: 'flex-end'
           }}>
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              style={{
-                flex: 1,
-                minHeight: '28px',
-                maxHeight: '120px',
-                padding: '6px 10px',
-                border: `1px solid ${themeColors.borderColor}`,
-                borderRadius: '14px',
-                fontSize: '11px',
-                resize: 'none',
-                outline: 'none',
-                fontFamily: 'inherit',
-                background: themeColors.primaryBackground,
-                color: themeColors.primaryText,
-                transition: 'all 0.2s ease',
-                lineHeight: '1.3'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = themeColors.primaryBlue;
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = themeColors.borderColor;
-              }}
-            />
+                                                                                                                            <textarea
+               ref={textareaRef}
+               value={inputValue}
+               onChange={handleInputChange}
+               onKeyPress={handleKeyPress}
+               onFocus={(e) => {
+                 e.target.style.borderColor = themeColors.primaryBlue;
+               }}
+               onBlur={(e) => {
+                 e.target.style.borderColor = themeColors.borderColor;
+               }}
+               placeholder="Type your message..."
+               style={{
+                 flex: 1,
+                 minHeight: '28px',
+                 maxHeight: '120px',
+                 padding: '6px 10px',
+                 border: `1px solid ${themeColors.borderColor}`,
+                 borderRadius: '14px',
+                 fontSize: '13px',
+                 resize: 'none',
+                 outline: 'none',
+                 fontFamily: 'inherit',
+                 background: themeColors.primaryBackground,
+                 color: themeColors.primaryText,
+                 transition: 'all 0.2s ease',
+                 lineHeight: '1.3',
+                 scrollbarWidth: 'thin',
+                 scrollbarColor: `${themeColors.borderColor} ${themeColors.primaryBackground}`
+               }}
+               className="custom-textarea"
+             />
+            
             <button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isTyping}
