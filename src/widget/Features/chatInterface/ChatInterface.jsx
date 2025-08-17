@@ -10,6 +10,7 @@ import {
   setIsTyping 
 } from '../store/chatStateSlice';
 
+
 const ChatInterface = () => {
   const dispatch = useDispatch();
   
@@ -284,6 +285,8 @@ const ChatInterface = () => {
             >
               {isExpanded ? '−' : '+'}
             </button>
+
+
           </div>
 
           {/* Messages Container */}

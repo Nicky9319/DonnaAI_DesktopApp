@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { incrementMessageCount, clearMessageCount } from '../../store/uiVisibilitySlice'
+import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
 import { themeColors } from '../../common/utils/colors'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
@@ -11,6 +12,7 @@ const MainPage = () => {
   const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, messageCount } = useSelector(
     (state) => state.uiVisibility
   );
+  const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
 
   // Local state to handle smooth transitions
   const [localVisibility, setLocalVisibility] = useState({
@@ -100,9 +102,9 @@ const MainPage = () => {
         fontSize: '12px',
         border: `1px solid ${themeColors.borderColor}`
       }}>
-        <div>Message Count: {messageCount}</div>
+        <div>Notification Count: {notificationCount}</div>
         <button 
-          onClick={() => dispatch(incrementMessageCount())}
+          onClick={() => dispatch(incrementNotificationCount())}
           style={{
             margin: '5px',
             padding: '5px 10px',
@@ -116,10 +118,10 @@ const MainPage = () => {
           onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.hoverBackground}
           onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.primaryBlue}
         >
-          Add Message
+          Add Notification
         </button>
         <button 
-          onClick={() => dispatch(clearMessageCount())}
+          onClick={() => dispatch(clearNotificationCount())}
           style={{
             margin: '5px',
             padding: '5px 10px',

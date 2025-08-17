@@ -8,6 +8,7 @@ import {
   setChatInterfaceVisible 
 } from '../store/uiVisibilitySlice';
 
+
 // Use a constant for widget position to avoid disappearing on re-render
 const WIDGET_LEFT = 1200; // Set this to a safe value for your screen, e.g. 1200px from left
 const WIDGET_TOP = 20;
@@ -15,6 +16,7 @@ const WIDGET_TOP = 20;
 const FloatingWidget = () => {
   const messageCount = useSelector((state) => state.uiVisibility.messageCount);
   const chatInterfaceVisible = useSelector((state) => state.uiVisibility.chatInterfaceVisible);
+  const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
   const dispatch = useDispatch();
@@ -58,6 +60,8 @@ const FloatingWidget = () => {
     if (messageCount > 0) {
       dispatch(clearMessageCount());
     }
+    
+
     
     console.log('✅ Chat interface visibility toggled to:', !chatInterfaceVisible);
     console.log('✅ Message count cleared');
@@ -124,7 +128,7 @@ const FloatingWidget = () => {
               }}
             >
               {/* Notification Badge */}
-              {messageCount > 0 && (
+              {notificationCount > 0 && (
                 <div
                   style={{
                     position: 'absolute',
@@ -148,7 +152,7 @@ const FloatingWidget = () => {
                     boxShadow: `0 2px 4px ${themeColors.notificationBadge}40, 0 0 0 1px rgba(255, 255, 255, 0.1)`
                   }}
                 >
-                  {messageCount > 99 ? '99+' : messageCount}
+                  {notificationCount > 99 ? '99+' : notificationCount}
                 </div>
               )}
               {/* Blue inner circle */}
@@ -210,7 +214,7 @@ const FloatingWidget = () => {
           zIndex: 2147483646, // Just below the widget
           animation: 'fadeIn 0.2s ease-in-out'
         }}>
-          {chatInterfaceVisible ? 'Hide Chat' : 'Show Chat'} {messageCount > 0 && `(${messageCount} new)`}
+          {chatInterfaceVisible ? 'Hide Chat' : 'Show Chat'} {notificationCount > 0 && `(${notificationCount} new)`}
           <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
             Ctrl+Shift+Space
           </div>
