@@ -42,6 +42,13 @@ if (process.contextIsolated) {
       recreateWidget: () => ipcRenderer.invoke('widget:recreate'),
       enableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', true, { forward: true }),
       disableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', false),
+      toggleVisibility: () => ipcRenderer.invoke('widget:toggleVisibility'),
+    });
+
+    // Listen for toggle-widget-visibility message from main process
+    ipcRenderer.on('toggle-widget-visibility', () => {
+      // Dispatch a custom event that the React app can listen to
+      window.dispatchEvent(new CustomEvent('toggle-widget-visibility'));
     });
 
   }
@@ -74,5 +81,12 @@ else{
     recreateWidget: () => ipcRenderer.invoke('widget:recreate'),
     enableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', true, { forward: true }),
     disableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', false),
+    toggleVisibility: () => ipcRenderer.invoke('widget:toggleVisibility'),
   }
+  
+  // Listen for toggle-widget-visibility message from main process
+  ipcRenderer.on('toggle-widget-visibility', () => {
+    // Dispatch a custom event that the React app can listen to
+    window.dispatchEvent(new CustomEvent('toggle-widget-visibility'));
+  });
 }

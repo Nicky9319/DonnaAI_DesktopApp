@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import { toggleAllWidgets } from '../../store/uiVisibilitySlice'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
 const MainPage = () => {
+  const dispatch = useDispatch();
   const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible } = useSelector(
     (state) => state.uiVisibility
   );
@@ -15,6 +17,22 @@ const MainPage = () => {
     actionBar: actionBarVisible && allWidgetsVisible,
     chatInterface: chatInterfaceVisible && allWidgetsVisible
   });
+
+  // Listen for toggle-widget-visibility event from main process
+  useEffect(() => {
+    const handleToggleVisibility = () => {
+      console.log('Toggle widget visibility event received');
+      dispatch(toggleAllWidgets());
+    };
+
+    // Add event listener for the custom event
+    window.addEventListener('toggle-widget-visibility', handleToggleVisibility);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener('toggle-widget-visibility', handleToggleVisibility);
+    };
+  }, [dispatch]);
 
   // Handle click-through based on allWidgetsVisible state
   useEffect(() => {

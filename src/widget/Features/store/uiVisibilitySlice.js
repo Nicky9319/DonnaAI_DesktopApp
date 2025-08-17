@@ -4,7 +4,7 @@ const initialState = {
   floatingWidgetVisible: true,
   actionBarVisible: true,
   chatInterfaceVisible: true,
-  allWidgetsVisible: false, // New state to control all widgets visibility
+  allWidgetsVisible: true, // New state to control all widgets visibility
 };
 
 const uiVisibilitySlice = createSlice({

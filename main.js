@@ -253,7 +253,23 @@ ipcMain.handle('widget:setIgnoreMouseEvents', (event, ignore, options) => {
   }
 });
 
-
+// Toggle widget visibility state handler
+ipcMain.handle('widget:toggleVisibility', () => {
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      // Send a message to the widget window to toggle the allWidgetsVisible state
+      widgetWindow.webContents.send('toggle-widget-visibility');
+      console.log('Sent toggle-widget-visibility message to widget window');
+      return true;
+    } else {
+      console.log('Widget window is not available or already destroyed');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error toggling widget visibility:', error);
+    return false;
+  }
+});
 
 // Click-through control handlers for main window
 ipcMain.handle('window:setClickThrough', (event, clickThrough) => {
@@ -907,19 +923,9 @@ app.whenReady().then(async () => {
   globalShortcut.register('CommandOrControl+`', () => {
     console.log('Widget toggle shortcut pressed');
     if (widgetWindow && !widgetWindow.isDestroyed()) {
-      if (widgetWindow.isVisible()) {
-        widgetWindow.hide();
-        console.log('Widget hidden');
-      } else {
-        widgetWindow.show();
-        setTimeout(() => {
-          widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-          widgetWindow.setAlwaysOnTop(false); // Reset first
-          widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
-          widgetWindow.focus(); // Ensure focus
-        }, 100);
-        console.log('Widget shown');
-      }
+      // Toggle the widget visibility state instead of hiding/showing the window
+      widgetWindow.webContents.send('toggle-widget-visibility');
+      console.log('Sent toggle-widget-visibility message to widget window');
     } else {
       // If widget window doesn't exist, create it
       createWidgetWindow();
