@@ -45,7 +45,9 @@ const FloatingWidget = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-                border: `2px solid ${themeColors.borderColor}`,
+                border: `1px solid rgba(255, 255, 255, 0.15)`,
+                outline: `1px solid rgba(255, 255, 255, 0.1)`,
+                outlineOffset: '1px',
                 cursor: 'pointer',
                 position: 'relative',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -68,9 +70,11 @@ const FloatingWidget = () => {
                     justifyContent: 'center',
                     fontSize: '10px',
                     fontWeight: 'bold',
-                    border: `1px solid ${themeColors.notificationBorder}`,
+                    border: `1px solid rgba(255, 255, 255, 0.2)`,
+                    outline: `1px solid rgba(255, 255, 255, 0.1)`,
+                    outlineOffset: '1px',
                     zIndex: 10,
-                    boxShadow: `0 2px 4px ${themeColors.notificationBadge}40`
+                    boxShadow: `0 2px 4px ${themeColors.notificationBadge}40, 0 0 0 1px rgba(255, 255, 255, 0.1)`
                   }}
                 >
                   {messageCount > 99 ? '99+' : messageCount}
