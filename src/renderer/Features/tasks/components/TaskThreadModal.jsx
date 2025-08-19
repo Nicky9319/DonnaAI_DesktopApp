@@ -1,10 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatThread from '../../chat/components/ChatThread';
+// Import the JSON file for simulating the API call
+import taskThreadData from '../api responses/get_task_thread_information.json';
 
 const TaskThreadModal = ({ task, onClose }) => {
     if (!task) return null;
 
     const [taskStatus, setTaskStatus] = useState(task.status);
+    const [messages, setMessages] = useState([]);
+
+    // Simulate API call to load messages from JSON
+    const loadTaskThreadMessages = async (taskId) => {
+        // In a real app, you'd fetch from an API using taskId
+        // Here, we filter the imported JSON by task_id
+        if (taskThreadData.task_id === taskId) {
+            // Map the payload to the format expected by ChatThread
+            const mapped = taskThreadData.payload.map(msg => ({
+                sender: msg.type === 'human' ? 'user' : 'ai',
+                text: msg.data.content,
+                // Optionally add timestamp or other fields if needed
+            }));
+            setMessages(mapped);
+        } else {
+            setMessages([]);
+        }
+    };
+
+    useEffect(() => {
+        if (task && task.id) {
+            loadTaskThreadMessages(task.id);
+        }
+    }, [task]);
 
     const getStatusConfig = (status) => {
         switch (status) {
@@ -56,14 +82,6 @@ const TaskThreadModal = ({ task, onClose }) => {
         console.log('Stopping task:', task.id);
         // TODO: Implement actual stop logic
     };
-
-    // Sample messages for the task
-    const messages = [
-        { sender: 'user', text: task.query },
-        { sender: 'ai', text: `I'll help you with this task: "${task.query}". Let me start working on it.` },
-        { sender: 'user', text: 'Please provide more details about the requirements.' },
-        { sender: 'ai', text: 'I\'ll analyze this thoroughly and provide you with a comprehensive solution.' },
-    ];
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
