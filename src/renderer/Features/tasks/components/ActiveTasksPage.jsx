@@ -1,39 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TaskCard from './TaskCard';
 import TaskThreadModal from './TaskThreadModal';
+// Import the JSON file for simulating the API call
+import allTasksData from '../api responses/get_all_task_information.json';
 
 const ActiveTasksPage = () => {
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
     const [selectedTask, setSelectedTask] = useState(null); // For modal
     const [activeFilter, setActiveFilter] = useState('All'); // 'All' | 'Active' | 'Halted' | 'Stopped'
-    
-    const tasks = [
-        {
-            id: 1,
-            query: "Summarize the quarterly report and extract key insights for the executive presentation.",
-            status: "active"
-        },
-        {
-            id: 2,
-            query: "Generate a Python script to automate the data processing pipeline for customer analytics.",
-            status: "halted"
-        },
-        {
-            id: 3,
-            query: "Send follow-up emails to all clients who haven't responded to our latest proposal.",
-            status: "userStopped"
-        },
-        {
-            id: 4,
-            query: "Research and compile a list of potential investors for our Series A funding round.",
-            status: "active"
-        },
-        {
-            id: 5,
-            query: "Create a comprehensive marketing strategy for the new product launch next month.",
-            status: "halted"
+    const [tasks, setTasks] = useState([]);
+
+    // Simulate API call to load all tasks from JSON
+    const loadAllTasks = async () => {
+        // In a real app, you'd fetch from an API
+        if (allTasksData && Array.isArray(allTasksData.payload)) {
+            // Map the payload to the format expected by the UI
+            const mapped = allTasksData.payload.map(t => ({
+                id: t.task_id,
+                query: t.task_query,
+                // Map backend status to UI status
+                status:
+                    t.task_status === 'running' ? 'active'
+                    : t.task_status === 'halted' ? 'halted'
+                    : t.task_status === 'stopped' || t.task_status === 'completed' || t.task_status === 'failed' ? 'userStopped'
+                    : 'unknown'
+            }));
+            setTasks(mapped);
+        } else {
+            setTasks([]);
         }
-    ];
+    };
+
+    useEffect(() => {
+        loadAllTasks();
+    }, []);
 
     const handleTaskAction = (taskId, action) => {
         console.log(`Task ${taskId} action: ${action}`);
