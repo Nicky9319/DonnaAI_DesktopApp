@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { incrementMessageCount, clearMessageCount } from '../../../store/slices/uiVisibilitySlice'
 import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
+import { addMessage, setIsTyping } from '../../../store/slices/chatStateSlice'
 import { themeColors } from '../../common/utils/colors'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
@@ -88,9 +89,18 @@ const MainPage = () => {
   }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
 
 
-  const handleDonnaMessage = (message_for_user) => {
-    dispatch(addMessage(message_for_user))
-    dispatch(setIsTyping(false))
+  const handleDonnaMessage = (messages) => {
+    console.log('Donna messages received:', messages);
+    
+    // Since we receive an array of messages, add each one to the chat
+    messages.forEach(message => {
+      // The message should already be in the correct format from the server
+      // {type: "ai", data: {...}} or {type: "human", data: {...}}
+      console.log('Adding message:', message);
+      dispatch(addMessage(message));
+    });
+    
+    dispatch(setIsTyping(false));
   }
   
   useEffect(() => {

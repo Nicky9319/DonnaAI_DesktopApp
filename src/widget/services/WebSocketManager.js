@@ -43,14 +43,14 @@ class WebSocketManager {
       this.socket.on('connect', () => {
         console.log('✅ WebSocket connected with ID:', this.socket.id);
         this.isConnected = true;
-        this.emit('connect');
+        this.triggerEvent('connect');
         resolve(true);
       });
 
       this.socket.on('connect_error', (error) => {
         console.error('❌ WebSocket connection error:', error);
         this.isConnected = false;
-        this.emit('connect_error', error);
+        this.triggerEvent('connect_error', error);
         resolve(false);
       });
     });
@@ -66,25 +66,25 @@ class WebSocketManager {
     this.socket.on('disconnect', (reason) => {
       console.log('🔌 WebSocket disconnected:', reason);
       this.isConnected = false;
-      this.emit('disconnect', reason);
+      this.triggerEvent('disconnect', reason);
     });
 
     this.socket.on('reconnect', () => {
       console.log('🔄 WebSocket reconnected');
       this.isConnected = true;
-      this.emit('reconnect');
+      this.triggerEvent('reconnect');
     });
 
     // Authentication events
     this.socket.on('authenticated', (data) => {
       console.log('✅ WebSocket authenticated:', data);
-      this.emit('authenticated', data);
+      this.triggerEvent('authenticated', data);
     });
 
     // Generic event listener for debugging
     this.socket.onAny((eventName, ...args) => {
       console.log(`📡 WebSocket event received: '${eventName}'`, args);
-      this.emit(eventName, ...args);
+      this.triggerEvent(eventName, ...args);
     });
   }
 

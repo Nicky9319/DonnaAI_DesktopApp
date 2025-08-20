@@ -1314,7 +1314,7 @@ function createWidgetWindow() {
        document.addEventListener('mouseover', (event) => {
          const target = event.target;
          // Only log basic info to avoid object cloning issues
-         console.log('Mouse over:', target.tagName, target.className);
+        //  console.log('Mouse over:', target.tagName, target.className);
          
          // If hovering over an interactive element, disable click-through
          if (isInteractiveElement(target)) {
@@ -1328,7 +1328,7 @@ function createWidgetWindow() {
         
         // If mouse is leaving to a non-interactive area, enable click-through
         if (!relatedTarget || !isInteractiveElement(relatedTarget)) {
-          console.log('Mouse leaving to non-interactive area, enabling click-through');
+          // console.log('Mouse leaving to non-interactive area, enabling click-through');
           window.enableClickThrough();
         }
       });
@@ -1337,15 +1337,15 @@ function createWidgetWindow() {
        document.addEventListener('click', (event) => {
          const target = event.target;
          // Only log basic info to avoid object cloning issues
-         console.log('Click detected on:', target.tagName, target.className);
+        //  console.log('Click detected on:', target.tagName, target.className);
          
          if (isInteractiveElement(target)) {
            // This is a click on interactive content, prevent it from passing through
            event.stopPropagation();
-           console.log('Click on interactive element - preventing pass-through');
+          //  console.log('Click on interactive element - preventing pass-through');
          } else {
            // This is a click on non-interactive area, let it pass through
-           console.log('Click on non-interactive area - allowing pass-through');
+          //  console.log('Click on non-interactive area - allowing pass-through');
          }
        });
       
@@ -1356,7 +1356,7 @@ function createWidgetWindow() {
         if (isInteractiveElement(target)) {
           // Prevent mousedown from passing through on interactive elements
           event.stopPropagation();
-          console.log('Mouse down on interactive element - preventing pass-through');
+          // console.log('Mouse down on interactive element - preventing pass-through');
         }
       });
       
