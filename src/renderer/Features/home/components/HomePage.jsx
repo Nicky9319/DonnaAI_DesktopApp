@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../../styles/scrollbar.css';
+import envVarsResponse from '../API Calls Responses/get-all-env-var.json';
 
 const HomePage = () => {
     const [apiKeys, setApiKeys] = useState({
@@ -15,6 +16,47 @@ const HomePage = () => {
 
     // show inline add form when plus is clicked
     const [showAddForm, setShowAddForm] = useState(false);
+
+    // Simulate API call to fetch all env variables
+    const fetchEnvVariables = async () => {
+        // In the future, replace this with an actual API call
+        if (envVarsResponse && Array.isArray(envVarsResponse.data)) {
+            const vars = {};
+            envVarsResponse.data.forEach(item => {
+                vars[item.name] = item.value;
+            });
+            setApiKeys(vars);
+        }
+    };
+
+    useEffect(() => {
+        fetchEnvVariables();
+    }, []);
+
+    // Placeholder for future API call to delete env variable
+    const deleteEnvVariable = (key) => {
+        // TODO: Implement API call to delete env variable
+    };
+
+    // Placeholder for future API call to update env variable
+    const updateEnvVariable = (key, value) => {
+        // TODO: Implement API call to update env variable
+    };
+
+    const handleDeleteVariable = (key) => {
+        deleteEnvVariable(key);
+        setApiKeys(prev => {
+            const updated = { ...prev };
+            delete updated[key];
+            return updated;
+        });
+        setShowPasswords(prev => {
+            const updated = { ...prev };
+            delete updated[key];
+            return updated;
+        });
+        if (editingKey === key) setEditingKey(null);
+    };
 
     const handleApiKeyChange = (key, value) => {
         setApiKeys(prev => ({ ...prev, [key]: value }));
@@ -40,8 +82,8 @@ const HomePage = () => {
     };
 
     const saveEdit = (key) => {
+        updateEnvVariable(key, apiKeys[key]);
         setEditingKey(null);
-        // TODO: Save the edited value
     };
 
     const cancelEdit = () => {
@@ -64,25 +106,9 @@ const HomePage = () => {
         setShowAddForm(false);
     };
 
-    const handleDeleteVariable = (key) => {
-        setApiKeys(prev => {
-            const updated = { ...prev };
-            delete updated[key];
-            return updated;
-        });
-        setShowPasswords(prev => {
-            const updated = { ...prev };
-            delete updated[key];
-            return updated;
-        });
-        if (editingKey === key) setEditingKey(null);
-    };
-
     return (
         <div className="min-h-full flex flex-col px-8 py-8 overflow-y-auto" 
-            style={{ 
-                backgroundColor: '#000000'
-            }}>
+            style={{ backgroundColor: '#000000' }}>
             {/* Header Section */}
             <div className="text-center mb-12">
                 <h1 className="text-4xl font-extralight tracking-tight mb-3" style={{ color: '#FFFFFF' }}>
@@ -139,7 +165,21 @@ const HomePage = () => {
                                             border: '1px solid rgba(255,255,255,0.05)'
                                         }}
                                     >
-                                        {showPasswords[key] ? value : '•'.repeat(40)}
+                                        {editingKey === key ? (
+                                            <input
+                                                type={showPasswords[key] ? "text" : "password"}
+                                                value={value}
+                                                onChange={(e) => handleApiKeyChange(key, e.target.value)}
+                                                className="w-full bg-transparent outline-none"
+                                                style={{
+                                                    color: '#E5E5E7',
+                                                    background: 'transparent',
+                                                    border: 'none'
+                                                }}
+                                            />
+                                        ) : (
+                                            showPasswords[key] ? value : '•'.repeat(40)
+                                        )}
                                     </div>
                                     {/* Action Buttons */}
                                     <div className="flex items-center space-x-1">
@@ -156,20 +196,47 @@ const HomePage = () => {
                                                 )}
                                             </svg>
                                         </button>
-                                        <button
-                                            onClick={() => startEditing(key)}
-                                            className="p-2.5 rounded-lg transition-colors hover:bg-[#1C1C1E]"
-                                            style={{ color: '#007AFF' }}
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
-                                        </button>
+                                        {editingKey === key ? (
+                                            <>
+                                                <button
+                                                    onClick={() => saveEdit(key)}
+                                                    className="p-2.5 rounded-lg transition-colors hover:bg-[#1C1C1E]"
+                                                    style={{ color: '#00D09C' }}
+                                                >
+                                                    {/* Save icon */}
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    onClick={cancelEdit}
+                                                    className="p-2.5 rounded-lg transition-colors hover:bg-[#1C1C1E]"
+                                                    style={{ color: '#8E8E93' }}
+                                                >
+                                                    {/* Cancel icon */}
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={() => startEditing(key)}
+                                                className="p-2.5 rounded-lg transition-colors hover:bg-[#1C1C1E]"
+                                                style={{ color: '#007AFF' }}
+                                            >
+                                                {/* Edit icon */}
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleDeleteVariable(key)}
                                             className="p-2.5 rounded-lg transition-colors hover:bg-[#1C1C1E]"
                                             style={{ color: '#FF3B30' }}
                                         >
+                                            {/* Delete (dustbin/trash) icon */}
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
