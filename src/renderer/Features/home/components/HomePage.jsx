@@ -78,7 +78,26 @@ const HomePage = () => {
     };
 
     return (
-        <div className="min-h-full flex flex-col px-6 py-6" style={{ backgroundColor: '#000000' }}>
+        <div className="min-h-full flex flex-col px-6 py-6" 
+            style={{ 
+                backgroundColor: '#000000',
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#1C1C1E #000000',
+                '&::-webkit-scrollbar': {
+                    width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                    background: '#000000',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                    background: '#1C1C1E',
+                    borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                    background: '#2C2C2E',
+                }
+            }}>
             {/* Header Section - macOS style with subtle spacing */}
             <div className="text-center mb-10">
                 <h1 className="text-4xl font-extralight tracking-tight mb-3" style={{ color: '#FFFFFF' }}>
@@ -95,7 +114,7 @@ const HomePage = () => {
             {/* Main Content - Centered card container */}
             <div className="flex justify-center">
                 <div 
-                    className="w-full max-w-2xl rounded-2xl p-6 shadow-2xl"
+                    className="w-full max-w-2xl rounded-2xl p-6 shadow-2xl overflow-hidden"
                     style={{ 
                         backgroundColor: '#0A0A0A',
                         border: '1px solid rgba(255,255,255,0.08)',
@@ -113,7 +132,25 @@ const HomePage = () => {
                     </div>
 
                     {/* Variables List */}
-                    <div className="space-y-3">
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2"
+                        style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#1C1C1E #111111',
+                            '&::-webkit-scrollbar': {
+                                width: '6px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: '#111111',
+                                borderRadius: '3px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: '#1C1C1E',
+                                borderRadius: '3px',
+                            },
+                            '&::-webkit-scrollbar-thumb:hover': {
+                                background: '#2C2C2E',
+                            }
+                        }}>
                         {Object.entries(apiKeys).map(([key, value]) => (
                             <div 
                                 key={key} 
@@ -123,35 +160,6 @@ const HomePage = () => {
                                     border: '1px solid rgba(255,255,255,0.06)'
                                 }}
                             >
-                                <div className="flex items-center justify-between mb-3">
-                                    <label className="text-sm font-medium" style={{ color: '#E5E5E7' }}>
-                                        {key.replace(/_/g, ' ')}
-                                    </label>
-                                    <div className="flex items-center space-x-2">
-                                        <button
-                                            onClick={() => togglePasswordVisibility(key)}
-                                            className="p-2 rounded-lg transition-colors"
-                                            style={{
-                                                backgroundColor: 'transparent',
-                                                color: '#8E8E93'
-                                            }}
-                                            onMouseEnter={(e) => e.target.style.backgroundColor = '#1C1C1E'}
-                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                {showPasswords[key] ? (
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                                                ) : (
-                                                    <>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </>
-                                                )}
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                
                                 {editingKey === key ? (
                                     <div className="space-y-3">
                                         <input
@@ -201,45 +209,50 @@ const HomePage = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        <div 
-                                            className="w-full px-4 py-3 rounded-lg text-sm font-mono"
-                                            style={{
-                                                backgroundColor: '#1A1A1A',
-                                                color: '#8E8E93',
-                                                border: '1px solid rgba(255,255,255,0.05)'
-                                            }}
-                                        >
-                                            {showPasswords[key] ? value : '•'.repeat(40)}
-                                        </div>
-                                        <div className="flex justify-end space-x-3">
-                                            <button
-                                                onClick={() => handleDeleteVariable(key)}
-                                                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                        <label className="text-sm font-medium block mb-2" style={{ color: '#E5E5E7' }}>
+                                            {key.replace(/_/g, ' ')}
+                                        </label>
+                                        <div className="flex items-center space-x-2">
+                                            <div 
+                                                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-mono"
                                                 style={{
-                                                    backgroundColor: 'rgba(255,59,48,0.1)',
-                                                    color: '#FF3B30',
-                                                    border: '1px solid rgba(255,59,48,0.2)'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.backgroundColor = '#FF3B30';
-                                                    e.target.style.color = '#FFFFFF';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.backgroundColor = 'rgba(255,59,48,0.1)';
-                                                    e.target.style.color = '#FF3B30';
+                                                    backgroundColor: '#1A1A1A',
+                                                    color: '#8E8E93',
+                                                    border: '1px solid rgba(255,255,255,0.05)'
                                                 }}
                                             >
-                                                Delete
+                                                {showPasswords[key] ? value : '•'.repeat(40)}
+                                            </div>
+                                            <button
+                                                onClick={() => togglePasswordVisibility(key)}
+                                                className="p-2 rounded-lg transition-colors hover:bg-[#1C1C1E]"
+                                                style={{ color: '#8E8E93' }}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    {showPasswords[key] ? (
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                                                    ) : (
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    )}
+                                                </svg>
                                             </button>
                                             <button
                                                 onClick={() => startEditing(key)}
-                                                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                style={{
-                                                    backgroundColor: '#007AFF',
-                                                    color: '#FFFFFF'
-                                                }}
+                                                className="p-2 rounded-lg transition-colors hover:bg-[#1C1C1E]"
+                                                style={{ color: '#007AFF' }}
                                             >
-                                                Edit
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteVariable(key)}
+                                                className="p-2 rounded-lg transition-colors hover:bg-[#1C1C1E]"
+                                                style={{ color: '#FF3B30' }}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </div>
