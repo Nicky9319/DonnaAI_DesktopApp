@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import readline from 'readline';
 
-const socket = io("http://localhost:12672");
+const socket = io("http://127.0.0.1:12672");
 
 // Create readline interface for terminal input
 const rl = readline.createInterface({
@@ -82,7 +82,7 @@ async function getConversation() {
     try {
         console.log("📥 Getting conversation with Donna agent...");
         
-        const response = await fetch("http://localhost:12672/api/get-conversation-with-donna-agent");
+        const response = await fetch("http://127.0.0.1:12672/api/get-conversation-with-donna-agent");
         const data = await response.json();
         
         console.log("✅ Conversation response:", JSON.stringify(data, null, 2));

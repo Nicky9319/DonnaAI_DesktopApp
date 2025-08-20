@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { setWebSocketInstance, setConnectionStatus } from '../../store/slices/webSocketSlice';
+import { 
+  setWebSocketInstance
+} from '../../store/slices/websocketSlice';
 import webSocketManager from '../../services/webSocketManager';
 
 const WebSocketManager = () => {
@@ -9,31 +11,19 @@ const WebSocketManager = () => {
 
   useEffect(() => {
     if (!isInitialized.current) {
+      console.log('🔧 WebSocket Manager component initialized');
+      
       // Set the WebSocket instance in Redux
       dispatch(setWebSocketInstance(webSocketManager));
-      
-      // Set up connection status listeners
-      const handleConnect = () => {
-        dispatch(setConnectionStatus(true));
-      };
-
-      const handleDisconnect = () => {
-        dispatch(setConnectionStatus(false));
-      };
-
-      // Add event listeners to WebSocket manager
-      webSocketManager.on('connect', handleConnect);
-      webSocketManager.on('disconnect', handleDisconnect);
 
       // Mark as initialized
       isInitialized.current = true;
 
-      console.log('🔧 WebSocket Manager component initialized');
+      console.log('✅ WebSocket Manager component ready');
 
-      // Cleanup listeners on unmount
+      // Cleanup on unmount
       return () => {
-        webSocketManager.off('connect', handleConnect);
-        webSocketManager.off('disconnect', handleDisconnect);
+        console.log('🧹 WebSocket Manager component unmounting');
       };
     }
   }, [dispatch]);

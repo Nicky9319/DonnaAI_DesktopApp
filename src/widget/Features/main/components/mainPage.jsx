@@ -7,11 +7,13 @@ import {
   selectIsConnected,
   selectWebSocketInstance,
   connectWebSocket,
-} from '../../../store/slices/webSocketSlice'
+  disconnectWebSocket,
+} from '../../../store/slices/websocketSlice'
 import WebSocketManager from '../../webSocketManager/WebSocketManager'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
+import WebSocketLifecycleTest from '../../../components/WebSocketLifecycleTest'
 
 const MainPage = () => {
   const dispatch = useDispatch();
@@ -31,62 +33,81 @@ const MainPage = () => {
     chatInterface: chatInterfaceVisible && allWidgetsVisible
   });
 
-  // WebSocket connection setup and monitoring
+  // WebSocket connection lifecycle management
   useEffect(() => {
-    // Check if WebSocket is already connected
-    if (!isConnected && wsInstance) {
-      // If not connected, try to connect
-      console.log('🔌 Widget WebSocket not connected, attempting to connect...');
-      wsInstance.connect();
-    } else if (!wsInstance) {
-      // If no WebSocket instance exists, dispatch connect action
-      dispatch(connectWebSocket());
-      console.log('🔌 Widget WebSocket connection initiated');
-    } else if (isConnected) {
-      console.log('🔌 Widget WebSocket already connected');
-    }
-  }, [dispatch, isConnected, wsInstance]);
+    console.log('🔌 MainPage: Component mounted - connecting to WebSocket...');
+    
+    // Connect to WebSocket when component mounts
+    dispatch(connectWebSocket({
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true
+    }));
 
-  // Monitor WebSocket connection status and auto-reconnect if needed
+    // Cleanup function - disconnect when component unmounts
+    return () => {
+      console.log('🔌 MainPage: Component unmounting - disconnecting WebSocket...');
+      dispatch(disconnectWebSocket());
+    };
+  }, [dispatch]);
+
+  // Monitor WebSocket connection status
   useEffect(() => {
-    if (wsInstance) {
-      const handleConnect = () => {
-        console.log('🔌 Widget WebSocket connected successfully');
-      };
-
-      const handleDisconnect = () => {
-        console.log('🔌 Widget WebSocket disconnected, attempting to reconnect...');
-        // Auto-reconnect after a short delay
-        setTimeout(() => {
-          if (wsInstance && !wsInstance.getConnectionStatus()) {
-            console.log('🔄 Attempting to reconnect WebSocket...');
-            wsInstance.connect();
-          }
-        }, 2000); // 2 second delay before reconnection attempt
-      };
-
-      // Add event listeners
-      wsInstance.connect();
-
-      // Cleanup listeners on unmount
-      return () => {
-        wsInstance.disconnect();
-      };
+    if (isConnected) {
+      console.log('✅ MainPage: WebSocket connected successfully');
+    } else {
+      console.log('❌ MainPage: WebSocket disconnected');
     }
-  }, [wsInstance]);
+  }, [isConnected]);
 
-  // Handle click-through based on allWidgetsVisible state
+  // Handle click-through based on allWidgetsVisible state and dev tools
   useEffect(() => {
     if (window.widgetAPI) {
-      if (!allWidgetsVisible) {
-        // Enable click-through when all widgets are hidden
-        window.widgetAPI.enableClickThrough();
-        console.log('Click-through enabled - all widgets hidden');
-      } else {
-        // Disable click-through when widgets are visible
-        window.widgetAPI.disableClickThrough();
-        console.log('Click-through disabled - widgets visible');
-      }
+      // Check if dev tools are open
+      const isDevToolsOpen = () => {
+        return (
+          window.outerHeight - window.innerHeight > 200 ||
+          window.outerWidth - window.innerWidth > 200 ||
+          window.Firebug?.chrome?.isInitialized ||
+          window.console?.profiles?.length > 0 ||
+          window.performance?.timing?.navigationStart === 0
+        );
+      };
+
+      // Make screen interactive when dev tools are open
+      const handleDevToolsChange = () => {
+        const devToolsIndicator = document.getElementById('dev-tools-indicator');
+        
+        if (isDevToolsOpen()) {
+          window.widgetAPI.disableClickThrough();
+          console.log('🔧 Dev tools detected - click-through disabled for debugging');
+          if (devToolsIndicator) {
+            devToolsIndicator.style.display = 'block';
+          }
+        } else {
+          if (devToolsIndicator) {
+            devToolsIndicator.style.display = 'none';
+          }
+          
+          if (!allWidgetsVisible) {
+            window.widgetAPI.enableClickThrough();
+            console.log('Click-through enabled - all widgets hidden');
+          } else {
+            window.widgetAPI.disableClickThrough();
+            console.log('Click-through disabled - widgets visible');
+          }
+        }
+      };
+
+      // Check on mount and set up interval
+      handleDevToolsChange();
+      
+      // Check periodically for dev tools
+      const interval = setInterval(handleDevToolsChange, 1000);
+
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [allWidgetsVisible]);
 
@@ -141,19 +162,79 @@ const MainPage = () => {
     };
   }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
 
-
+  // Test WebSocket events
   useEffect(() => {
-    if (wsInstance) {
+    if (wsInstance && isConnected) {
       wsInstance.on('test-event', (data) => {
         console.log('📡 Test event received:', data);
       });
     }
-  }, [wsInstance]);
+  }, [wsInstance, isConnected]);
+
+  // Keyboard shortcuts for debugging
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Ctrl/Cmd + Shift + D to toggle click-through for debugging
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        if (window.widgetAPI) {
+          // Toggle click-through state
+          const isCurrentlyEnabled = !allWidgetsVisible; // Simplified logic
+          if (isCurrentlyEnabled) {
+            window.widgetAPI.disableClickThrough();
+            console.log('🔧 Manual override: Click-through disabled for debugging');
+          } else {
+            window.widgetAPI.enableClickThrough();
+            console.log('🔧 Manual override: Click-through enabled');
+          }
+        }
+      }
+      
+      // Ctrl/Cmd + Shift + L to log current state
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'L') {
+        event.preventDefault();
+        console.log('📊 Current Widget State:', {
+          allWidgetsVisible,
+          floatingWidgetVisible,
+          actionBarVisible,
+          chatInterfaceVisible,
+          isConnected,
+          socketId: wsInstance?.getSocket()?.id
+        });
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [allWidgetsVisible, floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, isConnected, wsInstance]);
 
   return (
     <>
-      {/* WebSocket Manager Component - Initializes WebSocket and updates Redux */}
+      {/* WebSocket Manager Component - Initializes WebSocket instance */}
       <WebSocketManager />
+
+      {/* WebSocket Lifecycle Test Component */}
+      <WebSocketLifecycleTest />
+
+      {/* Dev Tools Indicator */}
+      <div style={{
+        position: 'fixed',
+        bottom: '10px',
+        left: '10px',
+        zIndex: 9999,
+        backgroundColor: '#059669',
+        color: 'white',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        fontSize: '11px',
+        fontWeight: 'bold',
+        display: 'none', // Will be shown via CSS when dev tools are detected
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+      }} id="dev-tools-indicator">
+        🔧 Dev Tools Active - Screen Interactive
+      </div>
 
       {/* Test Controls for Notification Badge and WebSocket Status */}
       <div style={{
@@ -178,6 +259,18 @@ const MainPage = () => {
           </span>
         </div>
         <div>Notification Count: {notificationCount}</div>
+        <div style={{ 
+          marginTop: '8px', 
+          padding: '6px', 
+          backgroundColor: '#1f2937', 
+          borderRadius: '4px',
+          fontSize: '10px',
+          border: '1px solid #374151'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Debug Shortcuts:</div>
+          <div>Ctrl+Shift+D: Toggle click-through</div>
+          <div>Ctrl+Shift+L: Log state</div>
+        </div>
         <button 
           onClick={() => dispatch(incrementNotificationCount())}
           style={{
@@ -214,11 +307,11 @@ const MainPage = () => {
         </button>
         <button 
           onClick={() => {
-            if (wsInstance) {
+            if (wsInstance && isConnected) {
               wsInstance.emit('test-event', { message: 'Hello from MainPage!' });
               console.log('📡 Test event emitted from MainPage');
             } else {
-              console.warn('⚠️ WebSocket instance not available');
+              console.warn('⚠️ WebSocket not connected');
             }
           }}
           style={{
@@ -238,33 +331,13 @@ const MainPage = () => {
         </button>
         <button 
           onClick={() => {
-            if (wsInstance) {
-              wsInstance.sendConnectionEvent();
+            if (wsInstance && isConnected) {
+              wsInstance.emit('test-widget-event', { 
+                message: 'Hello from widget!', 
+                timestamp: new Date().toISOString() 
+              });
             } else {
-              console.warn('⚠️ WebSocket instance not available');
-            }
-          }}
-          style={{
-            margin: '5px',
-            padding: '5px 10px',
-            backgroundColor: '#8B5CF6',
-            color: themeColors.primaryText,
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s ease'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#7C3AED'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = '#8B5CF6'}
-        >
-          Connect Event
-        </button>
-        <button 
-          onClick={() => {
-            if (wsInstance) {
-              wsInstance.emit('test-widget-event', { message: 'Hello from widget!', timestamp: new Date().toISOString() });
-            } else {
-              console.warn('⚠️ WebSocket instance not available');
+              console.warn('⚠️ WebSocket not connected');
             }
           }}
           style={{

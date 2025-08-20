@@ -36,7 +36,7 @@ const HomePage = () => {
     // Add new env variable via API
     const addEnvVariable = async (key, value) => {
         try {
-            const response = await fetch('http://localhost:12672/api/add-new-env', {
+            const response = await fetch('http://127.0.0.1:12672/api/add-new-env', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -54,7 +54,7 @@ const HomePage = () => {
     // Update env variable via API
     const updateEnvVariable = async (key, value) => {
         try {
-            const response = await fetch('http://localhost:12672/api/update-env-var', {
+            const response = await fetch('http://127.0.0.1:12672/api/update-env-var', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -72,7 +72,7 @@ const HomePage = () => {
     // Delete env variable via API
     const deleteEnvVariable = async (key) => {
         try {
-            await fetch(`http://localhost:12672/api/delete-env/${encodeURIComponent(key)}`, {
+            await fetch(`http://127.0.0.1:12672/api/delete-env/${encodeURIComponent(key)}`, {
                 method: 'DELETE'
             });
             // Optionally handle response

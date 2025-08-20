@@ -14,7 +14,7 @@ const ActiveTasksPage = () => {
     // Replace loadAllTasks with real API call
     const loadAllTasks = async () => {
         try {
-            const response = await fetch('http://localhost:12672/api/get-all-tasks');
+            const response = await fetch('http://127.0.0.1:12672/api/get-all-tasks');
             if (!response.ok) throw new Error('Failed to fetch tasks');
             const allTasksData = await response.json();
             if (allTasksData && Array.isArray(allTasksData.payload)) {
