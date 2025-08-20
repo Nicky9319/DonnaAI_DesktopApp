@@ -3,10 +3,18 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   messages: [
     {
-      id: 1,
-      text: "Hello! How can I help you today?",
-      sender: 'assistant',
-      timestamp: new Date(Date.now() - 60000).toISOString() // 1 minute ago
+      type: "ai",
+      data: {
+        content: "Hello! How can I help you today?",
+        additional_kwargs: {
+          time_stamp: new Date(Date.now() - 60000).toISOString() // 1 minute ago
+        },
+        response_metadata: {},
+        type: "ai",
+        name: null,
+        id: "initial-greeting",
+        example: false
+      }
     }
   ],
   isExpanded: false,

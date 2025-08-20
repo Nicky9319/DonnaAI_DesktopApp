@@ -2,17 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
 import { themeColors } from '../common/utils/colors';
-import { setChatInterfaceVisible } from '../store/uiVisibilitySlice';
+import { setChatInterfaceVisible } from '../../store/slices/uiVisibilitySlice';
 import { 
   addMessage, 
   setIsExpanded, 
   setPosition, 
   setIsTyping,
   setMessages
-} from '../store/chatStateSlice';
+} from '../../store/slices/chatStateSlice';
 
 // Import the chat history service
 import ChatHistoryService from './utils/chatHistoryService';
+// Import WebSocket manager
+import webSocketManager from '../../services/webSocketManager';
 
 const ChatInterface = () => {
   const dispatch = useDispatch();
@@ -40,7 +42,7 @@ const ChatInterface = () => {
       // Dispatch the processed messages to Redux
       dispatch(setMessages(processedMessages));
       
-      console.log('✅ Chat history loaded successfully:', processedMessages.length, 'messages');
+      // Chat history loaded successfully
     } catch (error) {
       console.error('❌ Error loading chat history:', error);
       // Fallback to default message
@@ -157,7 +159,7 @@ const ChatInterface = () => {
   };
 
   const handleSendMessage = () => {
-    if (inputValue.trim() && !isTyping) {
+    if (inputValue.trim()) {
       const newMessage = {
         id: Date.now(),
         text: inputValue.trim(),
@@ -167,32 +169,12 @@ const ChatInterface = () => {
 
       dispatch(addMessage(newMessage));
       setInputValue('');
+      
+      // Emit new-user-message event via WebSocket
+      webSocketManager.emit('new-user-message', inputValue.trim());
+      
+      // Set isTyping to true
       dispatch(setIsTyping(true));
-
-      // Simulate assistant response after 1-2 seconds
-      setTimeout(() => {
-        const responses = [
-          "I understand! Let me help you with that.",
-          "That's interesting! Can you tell me more?",
-          "I see what you mean. Here's what I think...",
-          "Great question! Let me break this down for you.",
-          "Thanks for sharing that with me. Here's my response...",
-          "I'm processing your request. Here's what I found...",
-          "That's a good point! Let me provide some insights...",
-          "I appreciate your message. Here's my take on this..."
-        ];
-        
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        const assistantMessage = {
-          id: Date.now() + 1,
-          text: randomResponse,
-          sender: 'assistant',
-          timestamp: new Date().toISOString()
-        };
-
-        dispatch(addMessage(assistantMessage));
-        dispatch(setIsTyping(false));
-      }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
     }
   };
 

@@ -10,7 +10,9 @@ class WebSocketManager {
     this.socket = null;
     this.isConnected = false;
     this.listeners = new Map();
-    this.connectionUrl = 'http://127.0.0.1:12672';
+
+    this.connectionUrl = 'http://localhost:12672';
+
     
     WebSocketManager.instance = this;
   }
@@ -40,18 +42,19 @@ class WebSocketManager {
     this.setupEventListeners();
     
     return new Promise((resolve) => {
-             this.socket.on('connect', () => {
-         console.log('✅ WebSocket connected with ID:', this.socket.id);
-         this.isConnected = true;
-         resolve(true);
-       });
+      this.socket.on('connect', () => {
+        console.log('✅ WebSocket connected with ID:', this.socket.id);
+        this.isConnected = true;
+        this.triggerEvent('connect');
+        resolve(true);
+      });
 
-             this.socket.on('connect_error', (error) => {
-         console.error('❌ WebSocket connection error:', error);
-         this.isConnected = false;
-         this.triggerEvent('connect_error', error);
-         resolve(false);
-       });
+      this.socket.on('connect_error', (error) => {
+        console.error('❌ WebSocket connection error:', error);
+        this.isConnected = false;
+        this.triggerEvent('connect_error', error);
+        resolve(false);
+      });
     });
   }
 
@@ -62,31 +65,29 @@ class WebSocketManager {
     if (!this.socket) return;
 
     // Connection events
-         this.socket.on('disconnect', (reason) => {
-       console.log('🔌 WebSocket disconnected:', reason);
-       this.isConnected = false;
-       this.triggerEvent('disconnected', reason);
-     });
+    this.socket.on('disconnect', (reason) => {
+      console.log('🔌 WebSocket disconnected:', reason);
+      this.isConnected = false;
+      this.triggerEvent('disconnect', reason);
+    });
 
-         this.socket.on('reconnect', () => {
-       console.log('🔄 WebSocket reconnected');
-       this.isConnected = true;
-       this.triggerEvent('reconnected');
-     });
+    this.socket.on('reconnect', () => {
+      console.log('🔄 WebSocket reconnected');
+      this.isConnected = true;
+      this.triggerEvent('reconnect');
+    });
 
     // Authentication events
-         this.socket.on('authenticated', (data) => {
-       console.log('✅ WebSocket authenticated:', data);
-       this.triggerEvent('authenticated', data);
-     });
+    this.socket.on('authenticated', (data) => {
+      console.log('✅ WebSocket authenticated:', data);
+      this.triggerEvent('authenticated', data);
+    });
 
-         // Generic event listener for debugging
-     this.socket.onAny((eventName, ...args) => {
-       console.log(`📡 WebSocket event received: '${eventName}'`, args);
-       this.triggerEvent(eventName, ...args);
-       // Also trigger the 'any' event for Redux
-       this.triggerEvent('any', eventName, ...args);
-     });
+    // Generic event listener for debugging
+    this.socket.onAny((eventName, ...args) => {
+      console.log(`📡 WebSocket event received: '${eventName}'`, args);
+      this.triggerEvent(eventName, ...args);
+    });
   }
 
   /**

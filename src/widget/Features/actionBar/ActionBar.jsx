@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
 import { themeColors } from '../common/utils/colors';
-import { setChatInterfaceVisible } from '../store/uiVisibilitySlice';
+import { setChatInterfaceVisible } from '../../store/slices/uiVisibilitySlice';
 
 const ActionBar = () => {
   const dispatch = useDispatch();
@@ -19,7 +19,7 @@ const ActionBar = () => {
   const handleShowMessages = () => {
     if (!chatInterfaceVisible) {
       dispatch(setChatInterfaceVisible(true));
-      console.log('✅ Chat interface opened from action bar');
+      // Chat interface opened from action bar
     }
   };
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { incrementMessageCount, clearMessageCount } from '../../store/uiVisibilitySlice'
+import { incrementMessageCount, clearMessageCount } from '../../../store/slices/uiVisibilitySlice'
 import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
+import { addMessage, setIsTyping } from '../../../store/slices/chatStateSlice'
 import { themeColors } from '../../common/utils/colors'
 import { 
   selectIsConnected,
@@ -13,7 +14,8 @@ import WebSocketManager from '../../webSocketManager/WebSocketManager'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
-import WebSocketLifecycleTest from '../../../components/WebSocketLifecycleTest'
+
+import webSocketManager from '../../../services/webSocketManager'
 
 const MainPage = () => {
   const dispatch = useDispatch();
@@ -63,51 +65,13 @@ const MainPage = () => {
   // Handle click-through based on allWidgetsVisible state and dev tools
   useEffect(() => {
     if (window.widgetAPI) {
-      // Check if dev tools are open
-      const isDevToolsOpen = () => {
-        return (
-          window.outerHeight - window.innerHeight > 200 ||
-          window.outerWidth - window.innerWidth > 200 ||
-          window.Firebug?.chrome?.isInitialized ||
-          window.console?.profiles?.length > 0 ||
-          window.performance?.timing?.navigationStart === 0
-        );
-      };
-
-      // Make screen interactive when dev tools are open
-      const handleDevToolsChange = () => {
-        const devToolsIndicator = document.getElementById('dev-tools-indicator');
-        
-        if (isDevToolsOpen()) {
-          window.widgetAPI.disableClickThrough();
-          console.log('🔧 Dev tools detected - click-through disabled for debugging');
-          if (devToolsIndicator) {
-            devToolsIndicator.style.display = 'block';
-          }
-        } else {
-          if (devToolsIndicator) {
-            devToolsIndicator.style.display = 'none';
-          }
-          
-          if (!allWidgetsVisible) {
-            window.widgetAPI.enableClickThrough();
-            console.log('Click-through enabled - all widgets hidden');
-          } else {
-            window.widgetAPI.disableClickThrough();
-            console.log('Click-through disabled - widgets visible');
-          }
-        }
-      };
-
-      // Check on mount and set up interval
-      handleDevToolsChange();
-      
-      // Check periodically for dev tools
-      const interval = setInterval(handleDevToolsChange, 1000);
-
-      return () => {
-        clearInterval(interval);
-      };
+      if (!allWidgetsVisible) {
+        // Enable click-through when all widgets are hidden
+        window.widgetAPI.enableClickThrough();
+      } else {
+        // Disable click-through when widgets are visible
+        window.widgetAPI.disableClickThrough();
+      }
     }
   }, [allWidgetsVisible]);
 
@@ -162,53 +126,29 @@ const MainPage = () => {
     };
   }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
 
-  // Test WebSocket events
-  useEffect(() => {
-    if (wsInstance && isConnected) {
-      wsInstance.on('test-event', (data) => {
-        console.log('📡 Test event received:', data);
-      });
-    }
-  }, [wsInstance, isConnected]);
 
-  // Keyboard shortcuts for debugging
+  const handleDonnaMessage = (messages) => {
+    console.log('Donna messages received:', messages);
+    
+    // Since we receive an array of messages, add each one to the chat
+    messages.forEach(message => {
+      // The message should already be in the correct format from the server
+      // {type: "ai", data: {...}} or {type: "human", data: {...}}
+      console.log('Adding message:', message);
+      dispatch(addMessage(message));
+    });
+    
+    dispatch(setIsTyping(false));
+  }
+  
   useEffect(() => {
-    const handleKeyPress = (event) => {
-      // Ctrl/Cmd + Shift + D to toggle click-through for debugging
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
-        event.preventDefault();
-        if (window.widgetAPI) {
-          // Toggle click-through state
-          const isCurrentlyEnabled = !allWidgetsVisible; // Simplified logic
-          if (isCurrentlyEnabled) {
-            window.widgetAPI.disableClickThrough();
-            console.log('🔧 Manual override: Click-through disabled for debugging');
-          } else {
-            window.widgetAPI.enableClickThrough();
-            console.log('🔧 Manual override: Click-through enabled');
-          }
-        }
-      }
-      
-      // Ctrl/Cmd + Shift + L to log current state
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'L') {
-        event.preventDefault();
-        console.log('📊 Current Widget State:', {
-          allWidgetsVisible,
-          floatingWidgetVisible,
-          actionBarVisible,
-          chatInterfaceVisible,
-          isConnected,
-          socketId: wsInstance?.getSocket()?.id
-        });
-      }
-    };
+    webSocketManager.connect()
+    webSocketManager.on('donna-message', handleDonnaMessage)
 
-    document.addEventListener('keydown', handleKeyPress);
     return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [allWidgetsVisible, floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, isConnected, wsInstance]);
+      webSocketManager.disconnect()
+    }
+  },[dispatch])
 
   return (
     <>
