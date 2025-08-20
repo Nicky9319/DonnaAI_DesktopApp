@@ -9,7 +9,6 @@ export const store = configureStore({
   reducer: {
     visibility: visibilitySlice,
     floatingWidget: floatingWidgetSlice,
-    webSocket: webSocketSlice,
     uiVisibility: uiVisibilityReducer,
     chatState: chatStateReducer,
     webSocket: webSocketReducer,
