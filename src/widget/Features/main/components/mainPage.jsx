@@ -29,11 +29,9 @@ const MainPage = () => {
       if (!allWidgetsVisible) {
         // Enable click-through when all widgets are hidden
         window.widgetAPI.enableClickThrough();
-        console.log('Click-through enabled - all widgets hidden');
       } else {
         // Disable click-through when widgets are visible
         window.widgetAPI.disableClickThrough();
-        console.log('Click-through disabled - widgets visible');
       }
     }
   }, [allWidgetsVisible]);
@@ -90,9 +88,15 @@ const MainPage = () => {
   }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
 
 
+  const handleDonnaMessage = (message_for_user) => {
+    dispatch(addMessage(message_for_user))
+    dispatch(setIsTyping(false))
+  }
+  
   useEffect(() => {
     webSocketManager.connect()
-    
+    webSocketManager.on('donna-message', handleDonnaMessage)
+
     return () => {
       webSocketManager.disconnect()
     }

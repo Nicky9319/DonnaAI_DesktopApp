@@ -19,7 +19,7 @@ const ActionBar = () => {
   const handleShowMessages = () => {
     if (!chatInterfaceVisible) {
       dispatch(setChatInterfaceVisible(true));
-      console.log('✅ Chat interface opened from action bar');
+      // Chat interface opened from action bar
     }
   };
 

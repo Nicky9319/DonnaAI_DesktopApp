@@ -63,7 +63,6 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 		// If this is the first hover for this instance, increment global count
 		if (hoverDepthRef.current === 1) {
 			globalHoverCount += 1
-			console.log(`HoverComponent entered. Global hover count: ${globalHoverCount}`)
 			
 			// Enable interaction if this is the first hovered instance globally
 			if (globalHoverCount === 1) {
@@ -79,7 +78,6 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 		// If this instance is no longer hovered, decrement global count
 		if (hoverDepthRef.current === 0) {
 			globalHoverCount = Math.max(globalHoverCount - 1, 0)
-			console.log(`HoverComponent left. Global hover count: ${globalHoverCount}`)
 			
 			// If no instances are hovered globally, disable interaction after delay
 			if (globalHoverCount === 0) {
@@ -87,7 +85,6 @@ const HoverComponent = ({ children, className, style, onClick }) => {
 				globalDisableTimeout = setTimeout(() => {
 					disableInteraction()
 					globalDisableTimeout = null
-					console.log('Interaction disabled - no HoverComponents hovered')
 				}, 75)
 			}
 		}

@@ -26,7 +26,7 @@ const FloatingWidget = () => {
 
   // Debug: Log when component mounts
   useEffect(() => {
-    console.log('🚀 FloatingWidget mounted - click handler should be available');
+    // Component mounted
   }, []);
 
   // Keyboard shortcut handler
@@ -54,8 +54,6 @@ const FloatingWidget = () => {
     
     e.preventDefault();
     e.stopPropagation();
-    console.log('🎯 Floating widget clicked! Event type:', e.type);
-    console.log('📍 Click coordinates:', { x: e.clientX, y: e.clientY });
     
     // Add click animation
     setIsClicked(true);
@@ -68,11 +66,6 @@ const FloatingWidget = () => {
     if (messageCount > 0) {
       dispatch(clearMessageCount());
     }
-    
-    
-    
-    console.log('✅ Chat interface visibility toggled to:', !chatInterfaceVisible);
-    console.log('✅ Message count cleared');
   };
 
   const handleMouseEnter = () => {
