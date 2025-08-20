@@ -238,44 +238,36 @@ const ActiveTasksPage = () => {
                 ))}
             </div>
 
-            {/* Empty State */}
+            {/* Redesigned Empty State */}
             {tasks.length === 0 && (
                 <div 
-                    className="text-center py-12 rounded-xl border"
+                    className="flex flex-col items-center justify-center py-16 rounded-xl border border-blue-900/30 shadow-lg"
                     style={{ 
-                        backgroundColor: '#0D1B2A',
-                        borderColor: '#3A86FF/20'
+                        background: 'linear-gradient(135deg, #0D1B2A 60%, #1C2541 100%)'
                     }}
                 >
-                    <div 
-                        className="text-6xl mb-4"
-                        style={{ color: '#3A86FF' }}
-                    >
-                        📋
+                    {/* Illustration */}
+                    <div className="mb-6">
+                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                            <rect x="10" y="20" width="60" height="40" rx="8" fill="#1C2541"/>
+                            <rect x="18" y="28" width="44" height="8" rx="4" fill="#3A86FF"/>
+                            <rect x="18" y="40" width="28" height="8" rx="4" fill="#415A77"/>
+                            <rect x="18" y="52" width="16" height="8" rx="4" fill="#415A77"/>
+                            <circle cx="64" cy="56" r="6" fill="#3A86FF" opacity="0.7"/>
+                        </svg>
                     </div>
                     <h3 
-                        className="text-xl font-semibold mb-2"
-                        style={{ color: '#FFFFFF' }}
+                        className="text-2xl font-semibold mb-2"
+                        style={{ color: '#FFFFFF', letterSpacing: '-0.5px' }}
                     >
-                        No active tasks
+                        No Tasks Yet
                     </h3>
                     <p 
-                        className="text-base mb-6"
-                        style={{ color: '#E0E0E0' }}
+                        className="text-base mb-6 max-w-md text-center"
+                        style={{ color: '#B0B8C1' }}
                     >
-                        Create your first task to get started with Donna
+                        You haven&apos;t created any tasks. Start by creating your first task and let Donna help you get things done!
                     </p>
-                    <button
-                        className="px-6 py-3 rounded-lg text-sm font-medium transition-colors"
-                        style={{ 
-                            backgroundColor: '#3A86FF',
-                            color: '#FFFFFF'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#265DF2'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#3A86FF'}
-                    >
-                        Create Task
-                    </button>
                 </div>
             )}
 
@@ -289,5 +281,7 @@ const ActiveTasksPage = () => {
         </div>
     );
 };
+
+
 
 export default ActiveTasksPage;
