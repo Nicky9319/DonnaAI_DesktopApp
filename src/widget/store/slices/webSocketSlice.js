@@ -22,24 +22,24 @@ export const connectWebSocket = createAsyncThunk(
       const connected = await webSocketManager.connect(null, options);
       
       if (connected) {
-        // Set up event listeners for Redux state updates
-        webSocketManager.on('connect', () => {
-          dispatch(setConnectionStatus(true));
-          dispatch(setSocketId(webSocketManager.getSocket()?.id));
-        });
+                 // Set up event listeners for Redux state updates
+         webSocketManager.on('connected', () => {
+           dispatch(setConnectionStatus(true));
+           dispatch(setSocketId(webSocketManager.getSocket()?.id));
+         });
 
-        webSocketManager.on('disconnect', () => {
-          dispatch(setConnectionStatus(false));
-          dispatch(setSocketId(null));
-        });
+         webSocketManager.on('disconnected', () => {
+           dispatch(setConnectionStatus(false));
+           dispatch(setSocketId(null));
+         });
 
-        webSocketManager.on('connect_error', (error) => {
-          dispatch(setError(error.message || 'Connection failed'));
-          dispatch(setConnectionStatus(false));
-        });
+         webSocketManager.on('connect_error', (error) => {
+           dispatch(setError(error.message || 'Connection failed'));
+           dispatch(setConnectionStatus(false));
+         });
 
         // Generic event listener for all events
-        webSocketManager.on('*', (eventName, data) => {
+        webSocketManager.on('any', (eventName, data) => {
           dispatch(setLastEvent({ event: eventName, data, timestamp: new Date().toISOString() }));
           dispatch(addToEventHistory({ event: eventName, data, timestamp: new Date().toISOString() }));
         });
