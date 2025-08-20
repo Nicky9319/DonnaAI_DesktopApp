@@ -78,16 +78,16 @@ const HomePage = () => {
     };
 
     return (
-        <div className="min-h-full flex flex-col px-8 py-8" style={{ backgroundColor: '#000000' }}>
+        <div className="min-h-full flex flex-col px-6 py-6" style={{ backgroundColor: '#000000' }}>
             {/* Header Section - macOS style with subtle spacing */}
-            <div className="text-center mb-12">
-                <h1 className="text-6xl font-extralight tracking-tight mb-4" style={{ color: '#FFFFFF' }}>
+            <div className="text-center mb-10">
+                <h1 className="text-4xl font-extralight tracking-tight mb-3" style={{ color: '#FFFFFF' }}>
                     Meet{' '}
                     <span className="font-light" style={{ color: '#00D09C' }}>
                         Donna
                     </span>
                 </h1>
-                <p className="text-lg font-light opacity-70" style={{ color: '#FFFFFF' }}>
+                <p className="text-base font-light opacity-70" style={{ color: '#FFFFFF' }}>
                     Your intelligent assistant for any task
                 </p>
             </div>
@@ -95,7 +95,7 @@ const HomePage = () => {
             {/* Main Content - Centered card container */}
             <div className="flex justify-center">
                 <div 
-                    className="w-full max-w-3xl rounded-2xl p-8 shadow-2xl"
+                    className="w-full max-w-2xl rounded-2xl p-6 shadow-2xl"
                     style={{ 
                         backgroundColor: '#0A0A0A',
                         border: '1px solid rgba(255,255,255,0.08)',
@@ -103,21 +103,21 @@ const HomePage = () => {
                     }}
                 >
                     {/* Section Title */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-light mb-2" style={{ color: '#FFFFFF' }}>
+                    <div className="mb-6">
+                        <h2 className="text-lg font-light mb-1" style={{ color: '#FFFFFF' }}>
                             Environment Variables
                         </h2>
-                        <p className="text-sm opacity-60" style={{ color: '#FFFFFF' }}>
+                        <p className="text-xs opacity-60" style={{ color: '#FFFFFF' }}>
                             Configure your API keys and environment variables
                         </p>
                     </div>
 
                     {/* Variables List */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {Object.entries(apiKeys).map(([key, value]) => (
                             <div 
                                 key={key} 
-                                className="rounded-xl p-5 transition-all duration-200"
+                                className="rounded-lg p-4 transition-all duration-200"
                                 style={{ 
                                     backgroundColor: '#111111',
                                     border: '1px solid rgba(255,255,255,0.06)'
@@ -247,10 +247,10 @@ const HomePage = () => {
                             </div>
                         ))}
 
-                        {/* Add Variable Form */}
+                        {/* Add Variable Form - with reduced sizes */}
                         {showAddForm && (
                             <div 
-                                className="rounded-xl p-5 transition-all duration-200"
+                                className="rounded-lg p-4 transition-all duration-200"
                                 style={{ 
                                     backgroundColor: '#111111',
                                     border: '2px solid #00D09C'
@@ -314,12 +314,12 @@ const HomePage = () => {
                             </div>
                         )}
 
-                        {/* Add Button */}
+                        {/* Add Button - with reduced sizes */}
                         {!showAddForm && (
-                            <div className="flex justify-center pt-4">
+                            <div className="flex justify-center pt-3">
                                 <button
                                     onClick={() => setShowAddForm(true)}
-                                    className="flex items-center px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200"
+                                    className="flex items-center px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200"
                                     style={{
                                         backgroundColor: 'rgba(0,208,156,0.1)',
                                         color: '#00D09C',
@@ -334,7 +334,7 @@ const HomePage = () => {
                                         e.target.style.borderColor = 'rgba(0,208,156,0.3)';
                                     }}
                                 >
-                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                     </svg>
                                     Add Variable
