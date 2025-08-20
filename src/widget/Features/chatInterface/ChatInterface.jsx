@@ -7,9 +7,12 @@ import {
   addMessage, 
   setIsExpanded, 
   setPosition, 
-  setIsTyping 
+  setIsTyping,
+  setMessages
 } from '../store/chatStateSlice';
 
+// Import the chat history service
+import ChatHistoryService from './utils/chatHistoryService';
 
 const ChatInterface = () => {
   const dispatch = useDispatch();
@@ -21,9 +24,41 @@ const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Function to load chat history from JSON file
+  const loadChatHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      
+      // Use the chat history service to load data
+      const processedMessages = await ChatHistoryService.loadChatHistory();
+      
+      // Dispatch the processed messages to Redux
+      dispatch(setMessages(processedMessages));
+      
+      console.log('✅ Chat history loaded successfully:', processedMessages.length, 'messages');
+    } catch (error) {
+      console.error('❌ Error loading chat history:', error);
+      // Fallback to default message
+      dispatch(setMessages([{
+        id: 'error-message',
+        text: "Hello! How can I help you today?",
+        sender: 'assistant',
+        timestamp: new Date().toISOString()
+      }]));
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Load chat history when component mounts
+  useEffect(() => {
+    loadChatHistory();
+  }, []);
 
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
@@ -286,6 +321,41 @@ const ChatInterface = () => {
               {isExpanded ? '−' : '+'}
             </button>
 
+            {/* Reload History Button */}
+            <button
+              onClick={loadChatHistory}
+              disabled={isLoadingHistory}
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '6px',
+                border: 'none',
+                background: isLoadingHistory ? themeColors.mutedText : themeColors.secondaryBackground,
+                color: themeColors.primaryText,
+                cursor: isLoadingHistory ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                fontSize: '10px',
+                marginTop: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoadingHistory) {
+                  e.target.style.background = themeColors.primaryBlue;
+                  e.target.style.transform = 'scale(1.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoadingHistory) {
+                  e.target.style.background = themeColors.secondaryBackground;
+                  e.target.style.transform = 'scale(1)';
+                }
+              }}
+              title={isLoadingHistory ? 'Loading...' : 'Reload History'}
+            >
+              {isLoadingHistory ? '⟳' : '↻'}
+            </button>
 
           </div>
 
@@ -313,6 +383,11 @@ const ChatInterface = () => {
             >
                              <style>
                  {`
+                   @keyframes spin {
+                     0% { transform: rotate(0deg); }
+                     100% { transform: rotate(360deg); }
+                   }
+                   
                    .messages-container::-webkit-scrollbar {
                      width: 6px;
                    }
@@ -350,8 +425,31 @@ const ChatInterface = () => {
                  `}
                </style>
 
+              {/* Loading indicator */}
+              {isLoadingHistory && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  padding: '20px',
+                  color: themeColors.mutedText,
+                  fontSize: '14px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: `2px solid ${themeColors.borderColor}`,
+                      borderTop: `2px solid ${themeColors.primaryBlue}`,
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Loading chat history...
+                  </div>
+                </div>
+              )}
+
               {/* Messages */}
-              {messages.map((message) => (
+              {!isLoadingHistory && messages.map((message) => (
                 <div 
                   key={message.id}
                   style={{ 
