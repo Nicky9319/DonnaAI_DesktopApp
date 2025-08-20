@@ -2,14 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import HoverComponent from '../common/components/HoverComponent';
 import { themeColors } from '../common/utils/colors';
-import { setChatInterfaceVisible } from '../store/uiVisibilitySlice';
+import { setChatInterfaceVisible } from '../../store/slices/uiVisibilitySlice';
 import { 
   addMessage, 
   setIsExpanded, 
   setPosition, 
   setIsTyping,
   setMessages
-} from '../store/chatStateSlice';
+} from '../../store/slices/chatStateSlice';
 
 // Import the chat history service
 import ChatHistoryService from './utils/chatHistoryService';

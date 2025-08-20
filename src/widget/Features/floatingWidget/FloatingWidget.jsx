@@ -6,7 +6,7 @@ import {
   toggleAllWidgets, 
   clearMessageCount, 
   setChatInterfaceVisible 
-} from '../store/uiVisibilitySlice';
+} from '../../store/slices/uiVisibilitySlice';
 import { setPosition } from '../../store/slices/floatingWidgetSlice';
 
 

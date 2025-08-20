@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { incrementMessageCount, clearMessageCount } from '../../store/uiVisibilitySlice'
+import { incrementMessageCount, clearMessageCount } from '../../../store/slices/uiVisibilitySlice'
 import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
 import { themeColors } from '../../common/utils/colors'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'

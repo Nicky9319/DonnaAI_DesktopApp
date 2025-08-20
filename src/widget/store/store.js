@@ -1,8 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
 import visibilitySlice from './slices/visibilitySlice'
 import floatingWidgetSlice from './slices/floatingWidgetSlice'
-import uiVisibilityReducer from '../Features/store/uiVisibilitySlice'
-import chatStateReducer from '../Features/store/chatStateSlice'
+import uiVisibilityReducer from './slices/uiVisibilitySlice'
+import chatStateReducer from './slices/chatStateSlice'
+import webSocketReducer from './slices/websocketSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     floatingWidget: floatingWidgetSlice,
     uiVisibility: uiVisibilityReducer,
     chatState: chatStateReducer,
+    webSocket: webSocketReducer,
     // Add your other reducers here as you create them
   },
   middleware: (getDefaultMiddleware) =>
