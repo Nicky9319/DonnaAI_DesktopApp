@@ -3,6 +3,12 @@ import { useSelector, useDispatch } from 'react-redux'
 import { incrementMessageCount, clearMessageCount } from '../../store/uiVisibilitySlice'
 import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
 import { themeColors } from '../../common/utils/colors'
+import { 
+  selectIsConnected,
+  selectWebSocketInstance,
+  connectWebSocket,
+} from '../../../store/slices/webSocketSlice'
+import WebSocketManager from '../../webSocketManager/WebSocketManager'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
@@ -13,6 +19,10 @@ const MainPage = () => {
     (state) => state.uiVisibility
   );
   const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
+  
+  // WebSocket state from Redux
+  const isConnected = useSelector(selectIsConnected);
+  const wsInstance = useSelector(selectWebSocketInstance);
 
   // Local state to handle smooth transitions
   const [localVisibility, setLocalVisibility] = useState({
@@ -20,6 +30,50 @@ const MainPage = () => {
     actionBar: actionBarVisible && allWidgetsVisible,
     chatInterface: chatInterfaceVisible && allWidgetsVisible
   });
+
+  // WebSocket connection setup and monitoring
+  useEffect(() => {
+    // Check if WebSocket is already connected
+    if (!isConnected && wsInstance) {
+      // If not connected, try to connect
+      console.log('🔌 Widget WebSocket not connected, attempting to connect...');
+      wsInstance.connect();
+    } else if (!wsInstance) {
+      // If no WebSocket instance exists, dispatch connect action
+      dispatch(connectWebSocket());
+      console.log('🔌 Widget WebSocket connection initiated');
+    } else if (isConnected) {
+      console.log('🔌 Widget WebSocket already connected');
+    }
+  }, [dispatch, isConnected, wsInstance]);
+
+  // Monitor WebSocket connection status and auto-reconnect if needed
+  useEffect(() => {
+    if (wsInstance) {
+      const handleConnect = () => {
+        console.log('🔌 Widget WebSocket connected successfully');
+      };
+
+      const handleDisconnect = () => {
+        console.log('🔌 Widget WebSocket disconnected, attempting to reconnect...');
+        // Auto-reconnect after a short delay
+        setTimeout(() => {
+          if (wsInstance && !wsInstance.getConnectionStatus()) {
+            console.log('🔄 Attempting to reconnect WebSocket...');
+            wsInstance.connect();
+          }
+        }, 2000); // 2 second delay before reconnection attempt
+      };
+
+      // Add event listeners
+      wsInstance.connect();
+
+      // Cleanup listeners on unmount
+      return () => {
+        wsInstance.disconnect();
+      };
+    }
+  }, [wsInstance]);
 
   // Handle click-through based on allWidgetsVisible state
   useEffect(() => {
@@ -87,9 +141,21 @@ const MainPage = () => {
     };
   }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
 
+
+  useEffect(() => {
+    if (wsInstance) {
+      wsInstance.on('test-event', (data) => {
+        console.log('📡 Test event received:', data);
+      });
+    }
+  }, [wsInstance]);
+
   return (
     <>
-      {/* Test Controls for Notification Badge */}
+      {/* WebSocket Manager Component - Initializes WebSocket and updates Redux */}
+      <WebSocketManager />
+
+      {/* Test Controls for Notification Badge and WebSocket Status */}
       <div style={{
         position: 'fixed',
         top: '10px',
@@ -102,6 +168,15 @@ const MainPage = () => {
         fontSize: '12px',
         border: `1px solid ${themeColors.borderColor}`
       }}>
+        <div style={{ marginBottom: '8px' }}>
+          <span style={{ fontWeight: 'bold' }}>WebSocket: </span>
+          <span style={{ 
+            color: isConnected ? '#10B981' : '#EF4444',
+            fontWeight: 'bold'
+          }}>
+            {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          </span>
+        </div>
         <div>Notification Count: {notificationCount}</div>
         <button 
           onClick={() => dispatch(incrementNotificationCount())}
@@ -136,6 +211,76 @@ const MainPage = () => {
           onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.mutedText}
         >
           Clear
+        </button>
+        <button 
+          onClick={() => {
+            if (wsInstance) {
+              wsInstance.emit('test-event', { message: 'Hello from MainPage!' });
+              console.log('📡 Test event emitted from MainPage');
+            } else {
+              console.warn('⚠️ WebSocket instance not available');
+            }
+          }}
+          style={{
+            margin: '5px',
+            padding: '5px 10px',
+            backgroundColor: '#10B981',
+            color: themeColors.primaryText,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#059669'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#10B981'}
+        >
+          Test WS
+        </button>
+        <button 
+          onClick={() => {
+            if (wsInstance) {
+              wsInstance.sendConnectionEvent();
+            } else {
+              console.warn('⚠️ WebSocket instance not available');
+            }
+          }}
+          style={{
+            margin: '5px',
+            padding: '5px 10px',
+            backgroundColor: '#8B5CF6',
+            color: themeColors.primaryText,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#7C3AED'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#8B5CF6'}
+        >
+          Connect Event
+        </button>
+        <button 
+          onClick={() => {
+            if (wsInstance) {
+              wsInstance.emit('test-widget-event', { message: 'Hello from widget!', timestamp: new Date().toISOString() });
+            } else {
+              console.warn('⚠️ WebSocket instance not available');
+            }
+          }}
+          style={{
+            margin: '5px',
+            padding: '5px 10px',
+            backgroundColor: '#8B5CF6',
+            color: themeColors.primaryText,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#7C3AED'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = '#8B5CF6'}
+        >
+          Test Widget Event
         </button>
       </div>
 
