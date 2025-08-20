@@ -33,14 +33,52 @@ const HomePage = () => {
         fetchEnvVariables();
     }, []);
 
-    // Placeholder for future API call to delete env variable
-    const deleteEnvVariable = (key) => {
-        // TODO: Implement API call to delete env variable
+    // Add new env variable via API
+    const addEnvVariable = async (key, value) => {
+        try {
+            const response = await fetch('http://localhost:12672/api/add-new-env', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    env_var_name: key,
+                    env_var_value: value
+                })
+            });
+            // Optionally handle response
+            // const data = await response.json();
+        } catch (e) {
+            // Optionally handle error
+        }
     };
 
-    // Placeholder for future API call to update env variable
-    const updateEnvVariable = (key, value) => {
-        // TODO: Implement API call to update env variable
+    // Update env variable via API
+    const updateEnvVariable = async (key, value) => {
+        try {
+            const response = await fetch('http://localhost:12672/api/update-env-var', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    env_var: key,
+                    value: value
+                })
+            });
+            // Optionally handle response
+            // const data = await response.json();
+        } catch (e) {
+            // Optionally handle error
+        }
+    };
+
+    // Delete env variable via API
+    const deleteEnvVariable = async (key) => {
+        try {
+            await fetch(`http://localhost:12672/api/delete-env/${encodeURIComponent(key)}`, {
+                method: 'DELETE'
+            });
+            // Optionally handle response
+        } catch (e) {
+            // Optionally handle error
+        }
     };
 
     const handleDeleteVariable = (key) => {
@@ -96,6 +134,7 @@ const HomePage = () => {
         // normalize variable name to use underscores instead of spaces
         const normalized = raw.replace(/\s+/g, '_');
         if (apiKeys.hasOwnProperty(normalized)) return;
+        addEnvVariable(normalized, newVar.value);
         setApiKeys(prev => ({ ...prev, [normalized]: newVar.value }));
         setNewVar({ key: '', value: '' });
         setShowAddForm(false);
