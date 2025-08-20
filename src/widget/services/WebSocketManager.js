@@ -10,7 +10,7 @@ class WebSocketManager {
     this.socket = null;
     this.isConnected = false;
     this.listeners = new Map();
-    this.connectionUrl = 'http://127.0.0.1:12672';
+    this.connectionUrl = 'http://localhost:12672';
     
     WebSocketManager.instance = this;
   }

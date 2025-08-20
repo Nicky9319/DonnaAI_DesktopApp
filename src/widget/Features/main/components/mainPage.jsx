@@ -7,6 +7,8 @@ import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
+import webSocketManager from '../../../services/webSocketManager'
+
 const MainPage = () => {
   const dispatch = useDispatch();
   const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, messageCount } = useSelector(
@@ -86,6 +88,15 @@ const MainPage = () => {
       timeoutIds.forEach(id => clearTimeout(id));
     };
   }, [floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, localVisibility]);
+
+
+  useEffect(() => {
+    webSocketManager.connect()
+    
+    return () => {
+      webSocketManager.disconnect()
+    }
+  },[dispatch])
 
   return (
     <>
