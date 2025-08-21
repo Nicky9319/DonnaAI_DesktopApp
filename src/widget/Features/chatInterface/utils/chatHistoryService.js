@@ -1,29 +1,70 @@
-// Import the conversation JSON file
+// Import the conversation JSON file (keeping as fallback)
 import conversationData from '../API Responses/conversation-with-donna.json';
 
 export class ChatHistoryService {
   
   /**
-   * Load chat history from the JSON file
-   * Later this will be replaced with an API call
+   * Load chat history from the API
    * @returns {Promise<Array>} Array of processed messages
    */
   static async loadChatHistory() {
     try {
-      // Simulate API delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('🔄 Loading chat history from API...');
       
-      // For now, we're loading from the imported JSON file
-      // Later this will be replaced with: const response = await fetch('/api/chat-history');
-      const response = conversationData;
+      // Make API call to the specified endpoint
+      const response = await fetch('http://localhost:12672/api/get-conversation-with-donna-agent', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any authentication headers if needed
+          // 'Authorization': `Bearer ${token}`
+        },
+        // Add timeout and other fetch options
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API response received:', data);
       
-      if (response.status === 200 && response.data) {
-        return this.processChatData(response.data);
+      if (data.status === 200 && data.data) {
+        return this.processChatData(data.data);
       } else {
-        throw new Error('Invalid response format');
+        throw new Error(`Invalid API response format: ${JSON.stringify(data)}`);
       }
     } catch (error) {
-      console.error('Error loading chat history:', error);
+      if (error.name === 'AbortError') {
+        console.error('❌ API request timed out after 10 seconds');
+      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        console.error('❌ Network error - server may be down or CORS issue');
+      } else {
+        console.error('❌ Error loading chat history from API:', error);
+      }
+      
+      // Commented out JSON fallback for now - can be re-enabled if needed
+      /*
+      console.log('🔄 Falling back to JSON file...');
+      
+      // Fallback to JSON file if API fails
+      try {
+        const response = conversationData;
+        
+        if (response.status === 200 && response.data) {
+          console.log('✅ Fallback to JSON file successful');
+          return this.processChatData(response.data);
+        } else {
+          throw new Error('Invalid fallback response format');
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback to JSON file also failed:', fallbackError);
+        throw fallbackError;
+      }
+      */
+      
+      // For now, just throw the original error since fallback is disabled
       throw error;
     }
   }
@@ -125,14 +166,17 @@ export class ChatHistoryService {
   }
 
   /**
-   * Future API call function (placeholder)
-   * This will replace the JSON file loading when the API is ready
+   * Alternative API call function for specific conversation IDs
+   * @param {string} conversationId - Optional conversation ID
+   * @returns {Promise<Array>} Array of processed messages
    */
   static async loadChatHistoryFromAPI(conversationId = null) {
     try {
+      console.log('🔄 Loading chat history from API with conversation ID:', conversationId);
+      
       const url = conversationId 
-        ? `/api/chat-history/${conversationId}`
-        : '/api/chat-history';
+        ? `http://localhost:12672/api/get-conversation-with-donna-agent/${conversationId}`
+        : 'http://localhost:12672/api/get-conversation-with-donna-agent';
         
       const response = await fetch(url, {
         method: 'GET',
@@ -148,9 +192,10 @@ export class ChatHistoryService {
       }
 
       const data = await response.json();
+      console.log('✅ API response received:', data);
       return this.processChatData(data.data || data);
     } catch (error) {
-      console.error('API Error loading chat history:', error);
+      console.error('❌ API Error loading chat history:', error);
       throw error;
     }
   }
