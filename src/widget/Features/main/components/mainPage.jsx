@@ -8,7 +8,8 @@ import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
 import ChatInterface from '../../chatInterface/ChatInterface'
 
-import webSocketManager from '../../../services/webSocketManager'
+import webSocketManager from '../../../services/WebSocketManager';
+import ChatHistoryService from '../../chatInterface/utils/chatHistoryService';
 
 const MainPage = () => {
   const dispatch = useDispatch();
@@ -92,12 +93,12 @@ const MainPage = () => {
   const handleDonnaMessage = (messages) => {
     console.log('Donna messages received:', messages);
     
-    // Since we receive an array of messages, add each one to the chat
-    messages.forEach(message => {
-      // The message should already be in the correct format from the server
-      // {type: "ai", data: {...}} or {type: "human", data: {...}}
-      console.log('Adding message:', message);
-      dispatch(addMessage(message));
+    // Since we receive an array of messages, process and add each one to the chat
+    messages.forEach(rawMessage => {
+      // Process the raw message through the same service used for chat history
+      const processedMessage = ChatHistoryService.processSingleMessage(rawMessage);
+      console.log('Adding processed message:', processedMessage);
+      dispatch(addMessage(processedMessage));
     });
     
     dispatch(setIsTyping(false));

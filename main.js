@@ -1146,12 +1146,33 @@ function createWidgetWindow() {
     }
   });
 
+  // Track DevTools open state
+  let widgetDevToolsOpen = false;
+
+  // --- Make widget window interactive when DevTools are open ---
+  widgetWindow.webContents.on('devtools-opened', () => {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetDevToolsOpen = true;
+      widgetWindow.setIgnoreMouseEvents(false);
+      console.log('DevTools opened: Widget window is now interactive.');
+    }
+  });
+  widgetWindow.webContents.on('devtools-closed', () => {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetDevToolsOpen = false;
+      widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      console.log('DevTools closed: Widget window is now click-through.');
+    }
+  });
+
   // Widget window event handlers
   widgetWindow.on('ready-to-show', () => {
     console.log('Widget window ready to show');
     if (widgetWindow && !widgetWindow.isDestroyed()) {
       widgetWindow.hide();
-      widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      if (!widgetDevToolsOpen) {
+        widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      }
       widgetWindow.setAlwaysOnTop(true, 'screen-saver');
     }
   });
@@ -1159,7 +1180,9 @@ function createWidgetWindow() {
   widgetWindow.on('show', () => {
     console.log('Widget window shown, ensuring click-through');
     if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      if (!widgetDevToolsOpen) {
+        widgetWindow.setIgnoreMouseEvents(true, { forward: true });
+      }
       widgetWindow.setAlwaysOnTop(true, 'screen-saver');
       // Force focus and bring to front
       setTimeout(() => {

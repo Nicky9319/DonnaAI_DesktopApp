@@ -14,7 +14,7 @@ import {
 // Import the chat history service
 import ChatHistoryService from './utils/chatHistoryService';
 // Import WebSocket manager
-import webSocketManager from '../../services/webSocketManager';
+import webSocketManager from '../../services/WebSocketManager';
 
 const ChatInterface = () => {
   const dispatch = useDispatch();
@@ -187,12 +187,24 @@ const ChatInterface = () => {
   };
 
   const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
+    try {
+      const date = new Date(timestamp);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid timestamp received:', timestamp);
+        return '--:--'; // Return a placeholder instead of "Invalid Date"
+      }
+      
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    } catch (error) {
+      console.error('Error formatting timestamp:', error, timestamp);
+      return '--:--'; // Return a placeholder on any error
+    }
   };
 
   const sidebarWidth = 40;

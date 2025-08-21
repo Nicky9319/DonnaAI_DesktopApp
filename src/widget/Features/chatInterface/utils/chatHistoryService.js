@@ -36,7 +36,26 @@ export class ChatHistoryService {
   static processChatData(rawData) {
     const processedMessages = rawData.map((item, index) => {
       const messageData = item.data;
-      const timestamp = messageData.additional_kwargs?.time_stamp || new Date().toISOString();
+      
+      // Better timestamp handling with validation
+      let timestamp = messageData.additional_kwargs?.time_stamp;
+      
+      // Validate the timestamp format
+      if (timestamp) {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) {
+          // Invalid timestamp format, use fallback
+          timestamp = null;
+        }
+      }
+      
+      // If no valid timestamp, create a reasonable fallback based on message order
+      if (!timestamp) {
+        // Create a timestamp that's a few seconds after the previous message
+        // or use current time for the first message
+        const baseTime = index === 0 ? Date.now() : Date.now() - (rawData.length - index) * 5000;
+        timestamp = new Date(baseTime).toISOString();
+      }
       
       return {
         id: messageData.id || `msg-${index}-${Date.now()}`,
@@ -64,6 +83,45 @@ export class ChatHistoryService {
     }
 
     return processedMessages;
+  }
+
+  /**
+   * Process a single message for WebSocket handling
+   * @param {Object} rawMessage - Raw message from WebSocket
+   * @returns {Object} Processed message
+   */
+  static processSingleMessage(rawMessage) {
+    const messageData = rawMessage.data;
+    
+    // Better timestamp handling with validation
+    let timestamp = messageData.additional_kwargs?.time_stamp;
+    
+    // Validate the timestamp format
+    if (timestamp) {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        // Invalid timestamp format, use fallback
+        timestamp = null;
+      }
+    }
+    
+    // If no valid timestamp, use current time
+    if (!timestamp) {
+      timestamp = new Date().toISOString();
+    }
+    
+    return {
+      id: messageData.id || `msg-${Date.now()}-${Math.random()}`,
+      text: messageData.content,
+      sender: rawMessage.type === 'human' ? 'user' : 'assistant',
+      timestamp: timestamp,
+      metadata: {
+        modelName: messageData.response_metadata?.model_name,
+        tokenUsage: messageData.response_metadata?.token_usage,
+        finishReason: messageData.response_metadata?.finish_reason,
+        originalId: messageData.id
+      }
+    };
   }
 
   /**
