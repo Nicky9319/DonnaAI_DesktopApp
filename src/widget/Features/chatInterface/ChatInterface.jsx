@@ -43,7 +43,7 @@ const ChatInterface = () => {
       // Dispatch the processed messages to Redux
       dispatch(setMessages(processedMessages));
       
-      // Chat history loaded successfully
+      console.log('Chat history reloaded successfully');
     } catch (error) {
       console.error('❌ Error loading chat history:', error);
       // Fallback to default message
@@ -58,14 +58,11 @@ const ChatInterface = () => {
     }
   };
 
-  // Load chat history when component mounts
+  // Reset notification count when chat interface mounts
   useEffect(() => {
-    loadChatHistory();
-    
-    // Reset notification count when chat interface mounts
     console.log('Chat interface mounted, clearing notification count');
     dispatch(clearNotificationCount());
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
 
   // Clear notification count when chat interface becomes visible
   const { chatInterfaceVisible, allWidgetsVisible } = useSelector(state => state.uiVisibility);

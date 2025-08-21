@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { incrementMessageCount, clearMessageCount } from '../../../store/slices/uiVisibilitySlice'
 import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
-import { addMessage, setIsTyping } from '../../../store/slices/chatStateSlice'
+import { addMessage, setIsTyping, setMessages } from '../../../store/slices/chatStateSlice'
 import { themeColors } from '../../common/utils/colors'
 import FloatingWidget from '../../floatingWidget/FloatingWidget'
 import ActionBar from '../../actionBar/ActionBar'
@@ -17,6 +17,7 @@ const MainPage = () => {
     (state) => state.uiVisibility
   );
   const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
+  const { messages } = useSelector((state) => state.chatState);
 
   // Use ref to track current visibility state for WebSocket handler
   const currentVisibilityRef = useRef({
@@ -31,6 +32,27 @@ const MainPage = () => {
       allWidgetsVisible
     };
   }, [chatInterfaceVisible, allWidgetsVisible]);
+
+  // Load initial chat history when application starts
+  useEffect(() => {
+    const loadInitialChatHistory = async () => {
+      // Only load if there are no messages in Redux state
+      if (messages.length <= 1) { // <= 1 because there might be a default greeting message
+        try {
+          console.log('Loading initial chat history on app start');
+          const processedMessages = await ChatHistoryService.loadChatHistory();
+          dispatch(setMessages(processedMessages));
+          console.log('Initial chat history loaded successfully');
+        } catch (error) {
+          console.error('Error loading initial chat history:', error);
+        }
+      } else {
+        console.log('Chat history already exists in Redux state, skipping initial load');
+      }
+    };
+
+    loadInitialChatHistory();
+  }, []); // Empty dependency array - only run once on mount
 
   // Local state to handle smooth transitions
   const [localVisibility, setLocalVisibility] = useState({
