@@ -10,6 +10,7 @@ import {
   setIsTyping,
   setMessages
 } from '../../store/slices/chatStateSlice';
+import { clearNotificationCount } from '../../store/slices/floatingWidgetSlice';
 
 // Import the chat history service
 import ChatHistoryService from './utils/chatHistoryService';
@@ -60,7 +61,25 @@ const ChatInterface = () => {
   // Load chat history when component mounts
   useEffect(() => {
     loadChatHistory();
+    
+    // Reset notification count when chat interface mounts
+    console.log('Chat interface mounted, clearing notification count');
+    dispatch(clearNotificationCount());
   }, []);
+
+  // Clear notification count when chat interface becomes visible
+  const { chatInterfaceVisible, allWidgetsVisible } = useSelector(state => state.uiVisibility);
+  const isChatInterfaceVisible = chatInterfaceVisible && allWidgetsVisible;
+  const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
+  
+  useEffect(() => {
+    if (isChatInterfaceVisible) {
+      // Reset notification count when chat interface becomes visible
+      console.log('Chat interface visible, clearing notification count');
+      console.log('Notification count before clearing:', notificationCount);
+      dispatch(clearNotificationCount());
+    }
+  }, [isChatInterfaceVisible, dispatch, notificationCount]);
 
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {

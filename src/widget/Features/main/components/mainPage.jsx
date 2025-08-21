@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { incrementMessageCount, clearMessageCount } from '../../../store/slices/uiVisibilitySlice'
 import { incrementNotificationCount, clearNotificationCount } from '../../../store/slices/floatingWidgetSlice'
@@ -17,6 +17,20 @@ const MainPage = () => {
     (state) => state.uiVisibility
   );
   const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
+
+  // Use ref to track current visibility state for WebSocket handler
+  const currentVisibilityRef = useRef({
+    chatInterfaceVisible: false,
+    allWidgetsVisible: true
+  });
+
+  // Update ref whenever visibility state changes
+  useEffect(() => {
+    currentVisibilityRef.current = {
+      chatInterfaceVisible,
+      allWidgetsVisible
+    };
+  }, [chatInterfaceVisible, allWidgetsVisible]);
 
   // Local state to handle smooth transitions
   const [localVisibility, setLocalVisibility] = useState({
@@ -92,6 +106,23 @@ const MainPage = () => {
 
   const handleDonnaMessage = (messages) => {
     console.log('Donna messages received:', messages);
+    
+    // Use ref to get the most current visibility state
+    const currentState = currentVisibilityRef.current;
+    const isChatInterfaceVisible = currentState.chatInterfaceVisible && currentState.allWidgetsVisible;
+    
+    console.log('Current visibility state:', currentState);
+    console.log('Is chat interface visible:', isChatInterfaceVisible);
+    
+    // If chat interface is not visible, increment notification count
+    if (!isChatInterfaceVisible) {
+      console.log('Chat interface not visible, incrementing notification count');
+      dispatch(incrementNotificationCount());
+    } else {
+      console.log('Chat interface is visible, no notification needed');
+    }
+    
+    console.log('Current notification count:', notificationCount);
     
     // Since we receive an array of messages, process and add each one to the chat
     messages.forEach(rawMessage => {
