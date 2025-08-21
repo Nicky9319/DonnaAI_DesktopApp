@@ -43,6 +43,10 @@ if (process.contextIsolated) {
       recreateWidget: () => ipcRenderer.invoke('widget:recreate'),
       enableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', true, { forward: true }),
       disableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', false),
+      // Undetectability controls
+      toggleUndetectability: () => ipcRenderer.invoke('widget:toggleUndetectability'),
+      setContentProtection: (enabled) => ipcRenderer.invoke('widget:setContentProtection', enabled),
+      getUndetectabilityState: () => ipcRenderer.invoke('widget:getUndetectabilityState'),
     });
 
   }
@@ -76,5 +80,9 @@ else{
     recreateWidget: () => ipcRenderer.invoke('widget:recreate'),
     enableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', true, { forward: true }),
     disableClickThrough: () => ipcRenderer.invoke('widget:setIgnoreMouseEvents', false),
+    // Undetectability controls
+    toggleUndetectability: () => ipcRenderer.invoke('widget:toggleUndetectability'),
+    setContentProtection: (enabled) => ipcRenderer.invoke('widget:setContentProtection', enabled),
+    getUndetectabilityState: () => ipcRenderer.invoke('widget:getUndetectabilityState'),
   }
 }

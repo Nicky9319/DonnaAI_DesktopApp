@@ -39,12 +39,19 @@ import { execSync } from 'child_process';
 
 let mainWindow, store, widgetWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
+let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
+
+// Platform detection
+const isMac = process.platform === 'darwin';
+const isWindows = process.platform === 'win32';
+const isLinux = process.platform === 'linux';
+const isDev = process.env.NODE_ENV === 'development';
 
 // Variables and constants END !!! ---------------------------------------------------------------------------------------------------
 
@@ -280,7 +287,27 @@ ipcMain.handle('widget:setIgnoreMouseEvents', async (event, ignore, options) => 
   }
 });
 
+// Widget undetectability handlers
+ipcMain.handle('widget:toggleUndetectability', () => {
+  if (widgetWindow) {
+    const newState = widgetWindow.toggleUndetectability();
+    widgetUndetectabilityEnabled = newState;
+    return newState;
+  }
+  return false;
+});
 
+ipcMain.handle('widget:setContentProtection', (event, enabled) => {
+  if (widgetWindow) {
+    widgetWindow.setContentProtection(enabled);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('widget:getUndetectabilityState', () => {
+  return widgetUndetectabilityEnabled;
+});
 
 // Click-through control handlers for main window
 ipcMain.handle('window:setClickThrough', (event, clickThrough) => {
@@ -1025,8 +1052,8 @@ app.whenReady().then(async () => {
         setTimeout(() => {
           if (widgetWindow && !widgetWindow.isDestroyed()) {
             widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-            widgetWindow.setAlwaysOnTop(false); // Reset first
-            widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+            widgetWindow.window.setAlwaysOnTop(false); // Reset first
+            widgetWindow.window.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
             widgetWindow.focus(); // Ensure focus
           }
         }, 100);
@@ -1113,6 +1140,255 @@ app.whenReady().then(async () => {
 
 
 
+// Undetectable Widget Window Class !!! ---------------------------------------------------------------------------------------------------
+
+class UndetectableWidgetWindow {
+  window;
+  undetectabilityEnabled;
+  devToolsOpen;
+
+  constructor(options = {}) {
+    this.undetectabilityEnabled = options.undetectabilityEnabled || true;
+    this.devToolsOpen = false;
+    
+    // Create widget window with undetectability features
+    this.window = new BrowserWindow({
+      width: 1920,
+      height: 1080,
+      frame: false,
+      alwaysOnTop: true,
+      skipTaskbar: this.undetectabilityEnabled, // Hide from taskbar when undetectable
+      resizable: false,
+      transparent: true,
+      hasShadow: false,
+      show: false, // Don't show until ready
+      fullscreen: true,
+      type: "panel", // Special window type for undetectability
+      roundedCorners: false,
+      minimizable: false,
+      hiddenInMissionControl: true, // macOS: hide from Mission Control
+      webPreferences: {
+        preload: join(__dirname, '../preload/preload.js'),
+        sandbox: false,
+        contextIsolation: true,
+        devTools: true,
+        nodeIntegration: false,
+      }
+    });
+
+    // Set content protection if undetectability is enabled
+    if (this.undetectabilityEnabled) {
+      this.window.setContentProtection(true);
+    }
+
+    // Additional undetectability measures
+    this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    this.window.setResizable(false);
+
+    // Platform-specific settings
+    if (isWindows) {
+      this.window.setAlwaysOnTop(true, "screen-saver", 1);
+      this.window.webContents.setBackgroundThrottling(false);
+    }
+
+    // Set initial mouse event ignoring - start with click-through enabled
+    this.setIgnoreMouseEvents(true, { forward: true });
+
+    // Event handlers
+    this.setupEventHandlers();
+  }
+
+  setupEventHandlers() {
+    // Track DevTools open state
+    this.window.webContents.on('devtools-opened', () => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.devToolsOpen = true;
+        this.window.setIgnoreMouseEvents(false);
+        console.log('DevTools opened: Widget window is now interactive.');
+      }
+    });
+
+    this.window.webContents.on('devtools-closed', () => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.devToolsOpen = false;
+        this.window.setIgnoreMouseEvents(true, { forward: true });
+        console.log('DevTools closed: Widget window is now click-through.');
+      }
+    });
+
+    // Widget window event handlers
+    this.window.on('ready-to-show', () => {
+      console.log('Widget window ready to show');
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.hide();
+        if (!this.devToolsOpen) {
+          this.window.setIgnoreMouseEvents(true, { forward: true });
+        }
+        this.window.setAlwaysOnTop(true, 'screen-saver');
+      }
+    });
+
+    this.window.on('show', () => {
+      console.log('Widget window shown, ensuring click-through');
+      if (this.window && !this.window.isDestroyed()) {
+        if (!this.devToolsOpen) {
+          this.window.setIgnoreMouseEvents(true, { forward: true });
+        }
+        this.window.setAlwaysOnTop(true, 'screen-saver');
+        // Force focus and bring to front
+        setTimeout(() => {
+          if (this.window && !this.window.isDestroyed()) {
+            this.window.focus();
+            this.window.setAlwaysOnTop(false); // Reset
+            this.window.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+          }
+        }, 50);
+      }
+    });
+
+    this.window.on('focus', () => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.setAlwaysOnTop(true, 'screen-saver');
+      }
+    });
+
+    this.window.on('closed', () => {
+      console.log('Widget window closed');
+    });
+
+    // Listen for mouse events to enable/disable click-through dynamically
+    this.window.webContents.on('dom-ready', () => {
+      try {
+        this.window.webContents.executeJavaScript(`
+        // Track click-through state
+        window.isClickThroughEnabled = false;
+        
+        // Function to enable click-through
+        window.enableClickThrough = () => {
+          window.isClickThroughEnabled = true;
+          console.log('Click-through enabled via renderer');
+        };
+        
+        // Function to disable click-through
+        window.disableClickThrough = () => {
+          window.isClickThroughEnabled = false;
+          console.log('Click-through disabled via renderer');
+        };
+        
+        // Function to toggle click-through
+        window.toggleClickThrough = () => {
+          window.isClickThroughEnabled = !window.isClickThroughEnabled;
+          console.log('Click-through toggled:', window.isClickThroughEnabled);
+        };
+        
+        // Expose functions globally
+        window.widgetClickThrough = {
+          enable: window.enableClickThrough,
+          disable: window.disableClickThrough,
+          toggle: window.toggleClickThrough,
+          isEnabled: () => window.isClickThroughEnabled
+        };
+        
+        console.log('Widget click-through functions initialized');
+        `);
+      } catch (error) {
+        console.error('Error setting up widget click-through functions:', error);
+      }
+    });
+  }
+
+  setIgnoreMouseEvents(ignore, options = {}) {
+    console.log(`[UndetectableWidgetWindow] Setting ignore mouse events: ${ignore}`);
+    
+    // When ignore is true, we want click-through (forward events to underlying apps)
+    // When ignore is false, we want interaction with our window
+    this.window.setIgnoreMouseEvents(ignore, { 
+      forward: options.forward || true,
+      ignore: ignore 
+    });
+    
+    // Additional settings for better click-through behavior
+    if (ignore) {
+      // When click-through is enabled, ensure window doesn't steal focus
+      this.window.setFocusable(false);
+      this.window.setFocusable(true);
+    }
+  }
+
+  setContentProtection(enabled) {
+    this.window.setContentProtection(enabled);
+  }
+
+  toggleUndetectability() {
+    this.undetectabilityEnabled = !this.undetectabilityEnabled;
+    this.setContentProtection(this.undetectabilityEnabled);
+    this.window.setSkipTaskbar(this.undetectabilityEnabled);
+    
+    // Ensure window stays fullscreen when toggling undetectability
+    if (this.window.isFullScreen()) {
+      this.window.setFullScreen(true);
+    }
+    
+    return this.undetectabilityEnabled;
+  }
+
+  show() {
+    this.window.show();
+  }
+
+  hide() {
+    this.window.hide();
+  }
+
+  focus() {
+    this.window.focus();
+  }
+
+  close() {
+    this.window.close();
+  }
+
+  minimize() {
+    this.window.minimize();
+  }
+
+  maximize() {
+    this.window.maximize();
+  }
+
+  isDestroyed() {
+    return this.window.isDestroyed();
+  }
+
+  isVisible() {
+    return this.window.isVisible();
+  }
+
+  isMaximized() {
+    return this.window.isMaximized();
+  }
+
+  reload() {
+    this.window.reload();
+  }
+
+  toggleDevTools() {
+    if (this.window.webContents.isDevToolsOpened()) {
+      this.window.webContents.closeDevTools();
+    } else {
+      this.window.webContents.openDevTools({ mode: 'detach' });
+    }
+  }
+
+  sendToWebContents(channel, data) {
+    if (!this.window.isDestroyed()) {
+      this.window.webContents.send(channel, data);
+    }
+  }
+}
+
+// Undetectable Widget Window Class END !!! ---------------------------------------------------------------------------------------------------
+
 function createWidgetWindow() {
   // Check if widget window already exists and is not destroyed
   if (widgetWindow && !widgetWindow.isDestroyed()) {
@@ -1125,315 +1401,28 @@ function createWidgetWindow() {
     return;
   }
 
-  widgetWindow = new BrowserWindow({
-    width: 1920,
-    height: 1080,
-    frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    alwaysOnTop: true,
-    transparent: true,
-    hasShadow: false,
-    show: false, // Don't show until ready
-    fullscreen: true,
-    webPreferences: {
-      preload: join(__dirname, '../preload/preload.js'),
-      sandbox: false,
-      contextIsolation: true,
-      devTools: true,
-      nodeIntegration: false,
-    }
+  // Create widget window using the undetectable window class
+  widgetWindow = new UndetectableWidgetWindow({
+    undetectabilityEnabled: widgetUndetectabilityEnabled
   });
-
-  // Track DevTools open state
-  let widgetDevToolsOpen = false;
-
-  // --- Make widget window interactive when DevTools are open ---
-  widgetWindow.webContents.on('devtools-opened', () => {
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetDevToolsOpen = true;
-      widgetWindow.setIgnoreMouseEvents(false);
-      console.log('DevTools opened: Widget window is now interactive.');
-    }
-  });
-  widgetWindow.webContents.on('devtools-closed', () => {
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetDevToolsOpen = false;
-      widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-      console.log('DevTools closed: Widget window is now click-through.');
-    }
-  });
-
-  // Widget window event handlers
-  widgetWindow.on('ready-to-show', () => {
-    console.log('Widget window ready to show');
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetWindow.hide();
-      if (!widgetDevToolsOpen) {
-        widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-      }
-      widgetWindow.setAlwaysOnTop(true, 'screen-saver');
-    }
-  });
-
-  widgetWindow.on('show', () => {
-    console.log('Widget window shown, ensuring click-through');
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      if (!widgetDevToolsOpen) {
-        widgetWindow.setIgnoreMouseEvents(true, { forward: true });
-      }
-      widgetWindow.setAlwaysOnTop(true, 'screen-saver');
-      // Force focus and bring to front
-      setTimeout(() => {
-        if (widgetWindow && !widgetWindow.isDestroyed()) {
-          widgetWindow.focus();
-          widgetWindow.setAlwaysOnTop(false); // Reset
-          widgetWindow.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
-        }
-      }, 50);
-    }
-  });
-
-  widgetWindow.on('focus', () => {
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetWindow.setAlwaysOnTop(true, 'screen-saver');
-    }
-  });
-
-  widgetWindow.on('closed', () => {
-    console.log('Widget window closed');
-    widgetWindow = null;
-  });
-
-  // Listen for mouse events to enable/disable click-through dynamically
-  widgetWindow.webContents.on('dom-ready', () => {
-    try {
-      widgetWindow.webContents.executeJavaScript(`
-      // Track click-through state
-      window.isClickThroughEnabled = false;
-      
-      // Function to enable click-through (make window transparent to clicks)
-      window.enableClickThrough = () => {
-        if (window.electronAPI) {
-          window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
-          window.isClickThroughEnabled = true;
-          console.log('Click-through enabled');
-        }
-      };
-      
-      // Function to disable click-through (make window interactive)
-      window.disableClickThrough = () => {
-        if (window.electronAPI) {
-          window.electronAPI.setIgnoreMouseEvents(false);
-          window.isClickThroughEnabled = false;
-          console.log('Click-through disabled - widget is now interactive');
-        }
-      };
-      
-      // Function to toggle click-through
-      window.toggleClickThrough = () => {
-        if (window.isClickThroughEnabled) {
-          window.disableClickThrough();
-        } else {
-          window.enableClickThrough();
-        }
-      };
-      
-      // Function to check if element is interactive/clickable
-      function isInteractiveElement(element) {
-        if (!element) return false;
-        
-        // Check if element is body or html (not interactive)
-        if (element.tagName === 'BODY' || element.tagName === 'HTML') {
-          return false;
-        }
-        
-        // Check if element has specific classes that indicate it's interactive
-        const interactiveClasses = [
-          'button', 'btn', 'clickable', 'interactive', 'widget-content',
-          'overlay', 'modal', 'dialog', 'panel', 'card', 'menu', 'dropdown',
-          'input', 'select', 'textarea', 'link', 'nav', 'sidebar',
-          'widget-interactive' // Custom class for marking elements as interactive
-        ];
-        
-        const className = element.className || '';
-        const classList = element.classList || [];
-        
-        // Check if element has interactive classes
-        for (const cls of interactiveClasses) {
-          if (className.includes(cls) || classList.contains(cls)) {
-            return true;
-          }
-        }
-        
-        // Check if element is marked as non-interactive (allow click-through)
-        if (classList.contains('widget-click-through')) {
-          return false;
-        }
-        
-        // Check if element is a form element or has click handlers
-        const tagName = element.tagName.toLowerCase();
-        const interactiveTags = ['button', 'input', 'select', 'textarea', 'a', 'label', 'div', 'span'];
-        
-        if (interactiveTags.includes(tagName)) {
-          // Check if element has content or is styled to be visible
-          const styles = window.getComputedStyle(element);
-          const hasContent = element.textContent && element.textContent.trim().length > 0;
-          const hasChildren = element.children && element.children.length > 0;
-          const hasBackground = styles.backgroundColor && styles.backgroundColor !== 'rgba(0, 0, 0, 0)' && styles.backgroundColor !== 'transparent';
-          const hasBorder = styles.border && styles.border !== 'none';
-          const hasOpacity = parseFloat(styles.opacity) > 0.1;
-          const hasDisplay = styles.display !== 'none';
-          const hasVisibility = styles.visibility !== 'hidden';
-          
-          // If element has any of these properties, it's likely interactive
-          if (hasContent || hasChildren || hasBackground || hasBorder || (hasOpacity && hasDisplay && hasVisibility)) {
-            return true;
-          }
-        }
-        
-        // Check if element has event listeners or is clickable
-        if (element.onclick || element.getAttribute('onclick')) {
-          return true;
-        }
-        
-        // Check if element has role attribute indicating it's interactive
-        const role = element.getAttribute('role');
-        if (role && ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'textbox'].includes(role)) {
-          return true;
-        }
-        
-        return false;
-      }
-      
-      // Function to check if element should allow click-through
-      function shouldAllowClickThrough(element) {
-        if (!element) return true;
-        
-        // If element is interactive, don't allow click-through
-        if (isInteractiveElement(element)) {
-          return false;
-        }
-        
-        // Check if element is completely transparent and empty
-        const styles = window.getComputedStyle(element);
-        const backgroundColor = styles.backgroundColor;
-        const opacity = parseFloat(styles.opacity);
-        const hasContent = element.textContent && element.textContent.trim().length > 0;
-        const hasChildren = element.children && element.children.length > 0;
-        
-        // Allow click-through only if element is completely transparent and has no content
-        return (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') && 
-               opacity < 0.1 && 
-               !hasContent && 
-               !hasChildren;
-      }
-      
-      // Start with click-through disabled to be safe
-      window.disableClickThrough();
-      
-             // Handle mouse events to dynamically enable/disable click-through
-       document.addEventListener('mouseover', (event) => {
-         const target = event.target;
-         // Only log basic info to avoid object cloning issues
-        //  console.log('Mouse over:', target.tagName, target.className);
-         
-         // If hovering over an interactive element, disable click-through
-         if (isInteractiveElement(target)) {
-           window.disableClickThrough();
-         }
-       });
-      
-      document.addEventListener('mouseout', (event) => {
-        const target = event.target;
-        const relatedTarget = event.relatedTarget;
-        
-        // If mouse is leaving to a non-interactive area, enable click-through
-        if (!relatedTarget || !isInteractiveElement(relatedTarget)) {
-          // console.log('Mouse leaving to non-interactive area, enabling click-through');
-          window.enableClickThrough();
-        }
-      });
-      
-             // Handle clicks - prevent default on interactive elements
-       document.addEventListener('click', (event) => {
-         const target = event.target;
-         // Only log basic info to avoid object cloning issues
-        //  console.log('Click detected on:', target.tagName, target.className);
-         
-         if (isInteractiveElement(target)) {
-           // This is a click on interactive content, prevent it from passing through
-           event.stopPropagation();
-          //  console.log('Click on interactive element - preventing pass-through');
-         } else {
-           // This is a click on non-interactive area, let it pass through
-          //  console.log('Click on non-interactive area - allowing pass-through');
-         }
-       });
-      
-      // Handle mousedown events
-      document.addEventListener('mousedown', (event) => {
-        const target = event.target;
-        
-        if (isInteractiveElement(target)) {
-          // Prevent mousedown from passing through on interactive elements
-          event.stopPropagation();
-          // console.log('Mouse down on interactive element - preventing pass-through');
-        }
-      });
-      
-      // Add a way to manually control click-through for specific areas
-      window.setClickThroughForElement = (element, enable) => {
-        if (enable) {
-          element.style.pointerEvents = 'none';
-        } else {
-          element.style.pointerEvents = 'auto';
-        }
-      };
-      
-      // Add a way to mark elements as interactive
-      window.markAsInteractive = (element) => {
-        if (element) {
-          element.classList.add('widget-interactive');
-        }
-      };
-      
-      // Add a way to mark elements as non-interactive (allow click-through)
-      window.markAsNonInteractive = (element) => {
-        if (element) {
-          element.classList.add('widget-click-through');
-                 }
-       };
-     `).catch(error => {
-       console.error('Error executing JavaScript in widget window:', error);
-     });
-   } catch (error) {
-     console.error('Error setting up widget window event handlers:', error);
-   }
-   });
 
   // Load the widget window with proper React support
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    // In development, load the widget from the same dev server but with a query parameter
     const baseUrl = process.env['ELECTRON_RENDERER_URL'];
     const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
     console.log('Widget URL:', widgetUrl);
-    console.log('Original URL:', process.env['ELECTRON_RENDERER_URL']);
-    widgetWindow.loadURL(widgetUrl).catch((error) => {
+    widgetWindow.window.loadURL(widgetUrl).catch((error) => {
       console.error('Failed to load widget URL:', error);
     });
   } else {
-    widgetWindow.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
+    widgetWindow.window.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
       console.error('Failed to load widget file:', error);
     });
   }
 
-  widgetWindow.setMenuBarVisibility(false);
-  
-  // Position the widget window at (0, 0) with size 1200x800
-  widgetWindow.setPosition(0, 0);
-  widgetWindow.setSize(1200, 800);
+  widgetWindow.window.setMenuBarVisibility(false);
+  widgetWindow.window.setPosition(0, 0);
+  widgetWindow.window.setSize(1200, 800);
 }
 
 createWidgetWindow();
