@@ -125,7 +125,7 @@ const SetupPage = () => {
 
   const handleContinue = async () => {
     try {
-      await window.electronAPI['setup:continue']();
+      await window.electronAPI.setupContinue();
     } catch (error) {
       console.error('Error continuing setup:', error);
       setError('Failed to continue. Please try again.');
