@@ -63,5 +63,26 @@ export default defineConfig({
         allow: [resolve(__dirname, 'src')]
       }
     }
+  },
+  setup: {
+    resolve: {
+      alias: {
+        '@setup': resolve(__dirname, 'src/setup')
+      }
+    },
+    plugins: [tailwindcss(), react()],
+    build: {
+      rollupOptions: {
+        input: {
+          setup: resolve(__dirname, 'src/setup/index.html')
+        }
+      }
+    },
+    server: {
+      port: 5175,
+      fs: {
+        allow: [resolve(__dirname, 'src')]
+      }
+    }
   }
 })

@@ -37,7 +37,7 @@ import { execSync } from 'child_process';
 
 // Variables and constants !!! ---------------------------------------------------------------------------------------------------
 
-let mainWindow, store, widgetWindow, tray;
+let mainWindow, store, widgetWindow, setupWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
 
@@ -73,6 +73,411 @@ ipcMain.on('change-window', (event, arg) => {
 
 
 
+
+// Window Creation Functions !!! ------------------------------------------------------------------------------------------------------
+
+// Setup window creation function
+function createSetupWindow() {
+  console.log('Creating setup window...');
+  setupWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    show: false,
+    frame: false, // Remove default titlebar
+    autoHideMenuBar: true,
+    resizable: false,
+    center: true,
+    webPreferences: {
+      preload: join(__dirname, '../preload/preload.js'),
+      sandbox: false,
+      contextIsolation: true,
+      devTools: true,
+    },
+  });
+
+  setupWindow.on('ready-to-show', () => {
+    setupWindow.show();
+  });
+
+  // Loading HTML and Configuring the Setup Window
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    const baseUrl = process.env['ELECTRON_RENDERER_URL'];
+    const setupUrl = baseUrl.endsWith('/') ? baseUrl + '?setup=true' : baseUrl + '/?setup=true';
+    console.log('Loading setup window from:', setupUrl);
+    setupWindow.loadURL(setupUrl);
+  } else {
+    const setupPath = join(__dirname, '../renderer/index.html');
+    console.log('Loading setup window from:', setupPath);
+    setupWindow.loadFile(setupPath);
+  }
+
+  setupWindow.setMenuBarVisibility(false);
+
+  // Handle setup window close event
+  setupWindow.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      // If setup window is closed without continuing, quit the app
+      app.quit();
+    }
+  });
+}
+
+// Undetectable Widget Window Class !!! ---------------------------------------------------------------------------------------------------
+
+class UndetectableWidgetWindow {
+  window;
+  undetectabilityEnabled;
+  devToolsOpen;
+
+  constructor(options = {}) {
+    this.undetectabilityEnabled = options.undetectabilityEnabled || true;
+    this.devToolsOpen = false;
+    
+    // Create widget window with undetectability features
+    this.window = new BrowserWindow({
+      width: 1920,
+      height: 1080,
+      frame: false,
+      alwaysOnTop: true,
+      skipTaskbar: this.undetectabilityEnabled, // Hide from taskbar when undetectable
+      resizable: false,
+      transparent: true,
+      hasShadow: false,
+      show: false, // Don't show until ready
+      fullscreen: true,
+      type: "panel", // Special window type for undetectability
+      roundedCorners: false,
+      minimizable: false,
+      hiddenInMissionControl: true, // macOS: hide from Mission Control
+      webPreferences: {
+        preload: join(__dirname, '../preload/preload.js'),
+        sandbox: false,
+        contextIsolation: true,
+        devTools: true,
+        nodeIntegration: false,
+      }
+    });
+
+    // Set content protection if undetectability is enabled
+    if (this.undetectabilityEnabled) {
+      this.window.setContentProtection(true);
+    }
+
+    // Additional undetectability measures
+    this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    this.window.setResizable(false);
+
+    // Platform-specific settings
+    if (isWindows) {
+      this.window.setAlwaysOnTop(true, "screen-saver", 1);
+      this.window.webContents.setBackgroundThrottling(false);
+    }
+
+    // Set initial mouse event ignoring - start with click-through enabled
+    this.setIgnoreMouseEvents(true, { forward: true });
+
+    // Event handlers
+    this.setupEventHandlers();
+  }
+
+  setupEventHandlers() {
+    // Track DevTools open state
+    this.window.webContents.on('devtools-opened', () => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.devToolsOpen = true;
+        this.window.setIgnoreMouseEvents(false);
+        console.log('DevTools opened: Widget window is now interactive.');
+      }
+    });
+
+    this.window.webContents.on('devtools-closed', () => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.devToolsOpen = false;
+        this.window.setIgnoreMouseEvents(true, { forward: true });
+        console.log('DevTools closed: Widget window is now click-through.');
+      }
+    });
+
+    // Widget window event handlers
+    this.window.on('ready-to-show', () => {
+      console.log('Widget window ready to show');
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.hide();
+        if (!this.devToolsOpen) {
+          this.window.setIgnoreMouseEvents(true, { forward: true });
+        }
+        this.window.setAlwaysOnTop(true, 'screen-saver');
+      }
+    });
+
+    this.window.on('show', () => {
+      console.log('Widget window shown, ensuring click-through');
+      if (this.window && !this.window.isDestroyed()) {
+        if (!this.devToolsOpen) {
+          this.window.setIgnoreMouseEvents(true, { forward: true });
+        }
+        this.window.setAlwaysOnTop(true, 'screen-saver');
+        // Force focus and bring to front
+        setTimeout(() => {
+          if (this.window && !this.window.isDestroyed()) {
+            this.window.focus();
+            this.window.setAlwaysOnTop(false); // Reset
+            this.window.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
+          }
+        }, 50);
+      }
+    });
+
+    this.window.on('focus', () => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.setAlwaysOnTop(true, 'screen-saver');
+      }
+    });
+
+    this.window.on('closed', () => {
+      console.log('Widget window closed');
+    });
+
+    // Listen for mouse events to enable/disable click-through dynamically
+    this.window.webContents.on('dom-ready', () => {
+      try {
+        this.window.webContents.executeJavaScript(`
+        // Track click-through state
+        window.isClickThroughEnabled = false;
+        
+        // Function to enable click-through
+        window.enableClickThrough = () => {
+          window.isClickThroughEnabled = true;
+          console.log('Click-through enabled via renderer');
+        };
+        
+        // Function to disable click-through
+        window.disableClickThrough = () => {
+          window.isClickThroughEnabled = false;
+          console.log('Click-through disabled via renderer');
+        };
+        
+        // Function to toggle click-through
+        window.toggleClickThrough = () => {
+          window.isClickThroughEnabled = !window.isClickThroughEnabled;
+          console.log('Click-through toggled:', window.isClickThroughEnabled);
+        };
+        
+        // Expose functions globally
+        window.widgetClickThrough = {
+          enable: window.enableClickThrough,
+          disable: window.disableClickThrough,
+          toggle: window.toggleClickThrough,
+          isEnabled: () => window.isClickThroughEnabled
+        };
+        
+        console.log('Widget click-through functions initialized');
+        `);
+      } catch (error) {
+        console.error('Error setting up widget click-through functions:', error);
+      }
+    });
+  }
+
+  setIgnoreMouseEvents(ignore, options = {}) {
+    console.log(`[UndetectableWidgetWindow] Setting ignore mouse events: ${ignore}`);
+    
+    // When ignore is true, we want click-through (forward events to underlying apps)
+    // When ignore is false, we want interaction with our window
+    this.window.setIgnoreMouseEvents(ignore, { 
+      forward: options.forward || true,
+      ignore: ignore 
+    });
+    
+    // Additional settings for better click-through behavior
+    if (ignore) {
+      // When click-through is enabled, ensure window doesn't steal focus
+      this.window.setFocusable(false);
+      this.window.setFocusable(true);
+    }
+  }
+
+  setContentProtection(enabled) {
+    this.window.setContentProtection(enabled);
+  }
+
+  toggleUndetectability() {
+    this.undetectabilityEnabled = !this.undetectabilityEnabled;
+    this.setContentProtection(this.undetectabilityEnabled);
+    this.window.setSkipTaskbar(this.undetectabilityEnabled);
+    
+    // Ensure window stays fullscreen when toggling undetectability
+    if (this.window.isFullScreen()) {
+      this.window.setFullScreen(true);
+    }
+    
+    return this.undetectabilityEnabled;
+  }
+
+  show() {
+    this.window.show();
+  }
+
+  hide() {
+    this.window.hide();
+  }
+
+  focus() {
+    this.window.focus();
+  }
+
+  close() {
+    this.window.close();
+  }
+
+  minimize() {
+    this.window.minimize();
+  }
+
+  maximize() {
+    this.window.maximize();
+  }
+
+  isDestroyed() {
+    return this.window.isDestroyed();
+  }
+
+  isVisible() {
+    return this.window.isVisible();
+  }
+
+  isMaximized() {
+    return this.window.isMaximized();
+  }
+
+  reload() {
+    this.window.reload();
+  }
+
+  toggleDevTools() {
+    if (this.window.webContents.isDevToolsOpened()) {
+      this.window.webContents.closeDevTools();
+    } else {
+      this.window.webContents.openDevTools({ mode: 'detach' });
+    }
+  }
+
+  sendToWebContents(channel, data) {
+    if (!this.window.isDestroyed()) {
+      this.window.webContents.send(channel, data);
+    }
+  }
+}
+
+// Undetectable Widget Window Class END !!! ---------------------------------------------------------------------------------------------------
+
+function createWidgetWindow() {
+  // Check if widget window already exists and is not destroyed
+  if (widgetWindow && !widgetWindow.isDestroyed()) {
+    console.log('Widget window already exists, focusing it');
+    try {
+      widgetWindow.focus();
+    } catch (error) {
+      console.error('Error focusing widget window:', error);
+    }
+    return;
+  }
+
+  // Create widget window using the undetectable window class
+  widgetWindow = new UndetectableWidgetWindow({
+    undetectabilityEnabled: widgetUndetectabilityEnabled
+  });
+
+  // Load the widget window with proper React support
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    const baseUrl = process.env['ELECTRON_RENDERER_URL'];
+    const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
+    console.log('Widget URL:', widgetUrl);
+    widgetWindow.window.loadURL(widgetUrl).catch((error) => {
+      console.error('Failed to load widget URL:', error);
+    });
+  } else {
+    widgetWindow.window.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
+      console.error('Failed to load widget file:', error);
+    });
+  }
+
+  widgetWindow.window.setMenuBarVisibility(false);
+  widgetWindow.window.setPosition(0, 0);
+  widgetWindow.window.setSize(1200, 800);
+}
+
+// Function to safely recreate widget window
+function recreateWidgetWindow() {
+  try {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+      widgetWindow.close();
+    }
+    setTimeout(() => {
+      createWidgetWindow();
+    }, 100);
+  } catch (error) {
+    console.error('Error recreating widget window:', error);
+  }
+}
+
+// Function to create main and widget windows
+function createMainAndWidgetWindows() {
+  // Creating Main Window
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    show: false,
+    frame: false, // Remove default titlebar
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: join(__dirname, '../preload/preload.js'),
+      sandbox: false,
+      contextIsolation: true,
+      devTools: true,
+    },
+  });
+
+  mainWindow.on('ready-to-show', () => {
+    mainWindow.show();
+  });
+
+  // Loading HTML and Configuring the Main Window
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+  } else {
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+  }
+
+  mainWindow.setMenuBarVisibility(false);
+
+  // Handle main window close event - hide instead of quit
+  mainWindow.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
+  // Create widget window
+  createWidgetWindow();
+
+  // Create tray
+  createTray();
+
+  // Register Protocol with the Windows
+  if (process.platform === 'win32') {
+    const urlArg = process.argv.find(arg => arg.startsWith('agentbed://'));
+    if (urlArg) {
+      mainWindow.webContents.once('did-finish-load', () => {
+        handleWebEventTrigger(urlArg)
+      });
+    }
+  }
+}
+
+// Window Creation Functions END !!! ------------------------------------------------------------------------------------------------------
 
 // IPC Handle Section !!! ------------------------------------------------------------------------------------------------------
 
@@ -285,6 +690,19 @@ ipcMain.handle('widget:setIgnoreMouseEvents', async (event, ignore, options) => 
     console.error('Error setting ignore mouse events:', error);
     return false;
   }
+});
+
+// Setup window handlers
+ipcMain.handle('setup:continue', () => {
+  console.log('Setup continue button pressed');
+  if (setupWindow && !setupWindow.isDestroyed()) {
+    console.log('Closing setup window...');
+    setupWindow.close();
+    setupWindow = null;
+  }
+  // Create main and widget windows
+  console.log('Creating main and widget windows...');
+  createMainAndWidgetWindows();
 });
 
 // Widget undetectability handlers
@@ -1083,374 +1501,11 @@ app.whenReady().then(async () => {
     // autoUpdater.checkForUpdates();
   
 
-  // Creating Window
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    show: false,
-    frame: false, // Remove default titlebar
-    autoHideMenuBar: true,
-    webPreferences: {
-      preload: join(__dirname, '../preload/preload.js'),
-      sandbox: false,
-      contextIsolation: true,
-      devTools: true,
-    },
-  })
-
-  // mainWindow.setAlwaysOnTop(true, 'screen-saver')
-
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-    // Main window should NOT have click-through enabled
-    // mainWindow.setIgnoreMouseEvents(true, { forward: true });
-  })
-
-
-  // Loading HTML and Configuring the Window
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
-
-  mainWindow.setMenuBarVisibility(false);
-
-  // Create tray
-  createTray();
-
-  // Handle window close event - hide instead of quit
-  mainWindow.on('close', (event) => {
-    if (!app.isQuiting) {
-      event.preventDefault();
-      mainWindow.hide();
-    }
-  });
+  // Create setup window first
+  createSetupWindow();
 
   // Register Protocol with the Windows
-
-  if (process.platform === 'win32') {
-    const urlArg = process.argv.find(arg => arg.startsWith('agentbed://'));
-    if (urlArg) {
-      mainWindow.webContents.once('did-finish-load', () => {
-        handleWebEventTrigger(urlArg)
-      });
-    }
-  }
-
-
-
-// Undetectable Widget Window Class !!! ---------------------------------------------------------------------------------------------------
-
-class UndetectableWidgetWindow {
-  window;
-  undetectabilityEnabled;
-  devToolsOpen;
-
-  constructor(options = {}) {
-    this.undetectabilityEnabled = options.undetectabilityEnabled || true;
-    this.devToolsOpen = false;
-    
-    // Create widget window with undetectability features
-    this.window = new BrowserWindow({
-      width: 1920,
-      height: 1080,
-      frame: false,
-      alwaysOnTop: true,
-      skipTaskbar: this.undetectabilityEnabled, // Hide from taskbar when undetectable
-      resizable: false,
-      transparent: true,
-      hasShadow: false,
-      show: false, // Don't show until ready
-      fullscreen: true,
-      type: "panel", // Special window type for undetectability
-      roundedCorners: false,
-      minimizable: false,
-      hiddenInMissionControl: true, // macOS: hide from Mission Control
-      webPreferences: {
-        preload: join(__dirname, '../preload/preload.js'),
-        sandbox: false,
-        contextIsolation: true,
-        devTools: true,
-        nodeIntegration: false,
-      }
-    });
-
-    // Set content protection if undetectability is enabled
-    if (this.undetectabilityEnabled) {
-      this.window.setContentProtection(true);
-    }
-
-    // Additional undetectability measures
-    this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    this.window.setResizable(false);
-
-    // Platform-specific settings
-    if (isWindows) {
-      this.window.setAlwaysOnTop(true, "screen-saver", 1);
-      this.window.webContents.setBackgroundThrottling(false);
-    }
-
-    // Set initial mouse event ignoring - start with click-through enabled
-    this.setIgnoreMouseEvents(true, { forward: true });
-
-    // Event handlers
-    this.setupEventHandlers();
-  }
-
-  setupEventHandlers() {
-    // Track DevTools open state
-    this.window.webContents.on('devtools-opened', () => {
-      if (this.window && !this.window.isDestroyed()) {
-        this.devToolsOpen = true;
-        this.window.setIgnoreMouseEvents(false);
-        console.log('DevTools opened: Widget window is now interactive.');
-      }
-    });
-
-    this.window.webContents.on('devtools-closed', () => {
-      if (this.window && !this.window.isDestroyed()) {
-        this.devToolsOpen = false;
-        this.window.setIgnoreMouseEvents(true, { forward: true });
-        console.log('DevTools closed: Widget window is now click-through.');
-      }
-    });
-
-    // Widget window event handlers
-    this.window.on('ready-to-show', () => {
-      console.log('Widget window ready to show');
-      if (this.window && !this.window.isDestroyed()) {
-        this.window.hide();
-        if (!this.devToolsOpen) {
-          this.window.setIgnoreMouseEvents(true, { forward: true });
-        }
-        this.window.setAlwaysOnTop(true, 'screen-saver');
-      }
-    });
-
-    this.window.on('show', () => {
-      console.log('Widget window shown, ensuring click-through');
-      if (this.window && !this.window.isDestroyed()) {
-        if (!this.devToolsOpen) {
-          this.window.setIgnoreMouseEvents(true, { forward: true });
-        }
-        this.window.setAlwaysOnTop(true, 'screen-saver');
-        // Force focus and bring to front
-        setTimeout(() => {
-          if (this.window && !this.window.isDestroyed()) {
-            this.window.focus();
-            this.window.setAlwaysOnTop(false); // Reset
-            this.window.setAlwaysOnTop(true, 'screen-saver'); // Re-apply
-          }
-        }, 50);
-      }
-    });
-
-    this.window.on('focus', () => {
-      if (this.window && !this.window.isDestroyed()) {
-        this.window.setAlwaysOnTop(true, 'screen-saver');
-      }
-    });
-
-    this.window.on('closed', () => {
-      console.log('Widget window closed');
-    });
-
-    // Listen for mouse events to enable/disable click-through dynamically
-    this.window.webContents.on('dom-ready', () => {
-      try {
-        this.window.webContents.executeJavaScript(`
-        // Track click-through state
-        window.isClickThroughEnabled = false;
-        
-        // Function to enable click-through
-        window.enableClickThrough = () => {
-          window.isClickThroughEnabled = true;
-          console.log('Click-through enabled via renderer');
-        };
-        
-        // Function to disable click-through
-        window.disableClickThrough = () => {
-          window.isClickThroughEnabled = false;
-          console.log('Click-through disabled via renderer');
-        };
-        
-        // Function to toggle click-through
-        window.toggleClickThrough = () => {
-          window.isClickThroughEnabled = !window.isClickThroughEnabled;
-          console.log('Click-through toggled:', window.isClickThroughEnabled);
-        };
-        
-        // Expose functions globally
-        window.widgetClickThrough = {
-          enable: window.enableClickThrough,
-          disable: window.disableClickThrough,
-          toggle: window.toggleClickThrough,
-          isEnabled: () => window.isClickThroughEnabled
-        };
-        
-        console.log('Widget click-through functions initialized');
-        `);
-      } catch (error) {
-        console.error('Error setting up widget click-through functions:', error);
-      }
-    });
-  }
-
-  setIgnoreMouseEvents(ignore, options = {}) {
-    console.log(`[UndetectableWidgetWindow] Setting ignore mouse events: ${ignore}`);
-    
-    // When ignore is true, we want click-through (forward events to underlying apps)
-    // When ignore is false, we want interaction with our window
-    this.window.setIgnoreMouseEvents(ignore, { 
-      forward: options.forward || true,
-      ignore: ignore 
-    });
-    
-    // Additional settings for better click-through behavior
-    if (ignore) {
-      // When click-through is enabled, ensure window doesn't steal focus
-      this.window.setFocusable(false);
-      this.window.setFocusable(true);
-    }
-  }
-
-  setContentProtection(enabled) {
-    this.window.setContentProtection(enabled);
-  }
-
-  toggleUndetectability() {
-    this.undetectabilityEnabled = !this.undetectabilityEnabled;
-    this.setContentProtection(this.undetectabilityEnabled);
-    this.window.setSkipTaskbar(this.undetectabilityEnabled);
-    
-    // Ensure window stays fullscreen when toggling undetectability
-    if (this.window.isFullScreen()) {
-      this.window.setFullScreen(true);
-    }
-    
-    return this.undetectabilityEnabled;
-  }
-
-  show() {
-    this.window.show();
-  }
-
-  hide() {
-    this.window.hide();
-  }
-
-  focus() {
-    this.window.focus();
-  }
-
-  close() {
-    this.window.close();
-  }
-
-  minimize() {
-    this.window.minimize();
-  }
-
-  maximize() {
-    this.window.maximize();
-  }
-
-  isDestroyed() {
-    return this.window.isDestroyed();
-  }
-
-  isVisible() {
-    return this.window.isVisible();
-  }
-
-  isMaximized() {
-    return this.window.isMaximized();
-  }
-
-  reload() {
-    this.window.reload();
-  }
-
-  toggleDevTools() {
-    if (this.window.webContents.isDevToolsOpened()) {
-      this.window.webContents.closeDevTools();
-    } else {
-      this.window.webContents.openDevTools({ mode: 'detach' });
-    }
-  }
-
-  sendToWebContents(channel, data) {
-    if (!this.window.isDestroyed()) {
-      this.window.webContents.send(channel, data);
-    }
-  }
-}
-
-// Undetectable Widget Window Class END !!! ---------------------------------------------------------------------------------------------------
-
-function createWidgetWindow() {
-  // Check if widget window already exists and is not destroyed
-  if (widgetWindow && !widgetWindow.isDestroyed()) {
-    console.log('Widget window already exists, focusing it');
-    try {
-      widgetWindow.focus();
-    } catch (error) {
-      console.error('Error focusing widget window:', error);
-    }
-    return;
-  }
-
-  // Create widget window using the undetectable window class
-  widgetWindow = new UndetectableWidgetWindow({
-    undetectabilityEnabled: widgetUndetectabilityEnabled
-  });
-
-  // Load the widget window with proper React support
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    const baseUrl = process.env['ELECTRON_RENDERER_URL'];
-    const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
-    console.log('Widget URL:', widgetUrl);
-    widgetWindow.window.loadURL(widgetUrl).catch((error) => {
-      console.error('Failed to load widget URL:', error);
-    });
-  } else {
-    widgetWindow.window.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
-      console.error('Failed to load widget file:', error);
-    });
-  }
-
-  widgetWindow.window.setMenuBarVisibility(false);
-  widgetWindow.window.setPosition(0, 0);
-  widgetWindow.window.setSize(1200, 800);
-}
-
-createWidgetWindow();
-
-// Function to safely recreate widget window
-function recreateWidgetWindow() {
-  try {
-    if (widgetWindow && !widgetWindow.isDestroyed()) {
-      widgetWindow.close();
-    }
-    setTimeout(() => {
-      createWidgetWindow();
-    }, 100);
-  } catch (error) {
-    console.error('Error recreating widget window:', error);
-  }
-}
-
-// Add IPC handler for recreating widget window
-ipcMain.handle('widget:recreate', () => {
-  try {
-    recreateWidgetWindow();
-    return true;
-  } catch (error) {
-    console.error('Error in widget:recreate handler:', error);
-    return false;
-  }
-});
+  // Note: Protocol handling will be set up after main window is created
 
 });
 
@@ -1465,6 +1520,16 @@ app.on('will-quit' , async (event) => {
   if (tray) {
     tray.destroy();
     tray = null;
+  }
+
+  // Clean up setup window
+  if (setupWindow && !setupWindow.isDestroyed()) {
+    try {
+      setupWindow.close();
+      setupWindow = null;
+    } catch (error) {
+      console.error('Error closing setup window during quit:', error);
+    }
   }
 
   // Clean up widget window

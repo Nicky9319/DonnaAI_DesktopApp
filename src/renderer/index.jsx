@@ -4,11 +4,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 
-// Check if this is a widget request
+// Check if this is a widget request or setup request
 const urlParams = new URLSearchParams(window.location.search);
 const isWidget = urlParams.get('widget') === 'true';
+const isSetup = urlParams.get('setup') === 'true';
 
-console.log('MAIN RENDERER INDEX.JSX LOADED!', isWidget ? 'WIDGET MODE' : 'MAIN APP MODE');
+console.log('MAIN RENDERER INDEX.JSX LOADED!', isWidget ? 'WIDGET MODE' : isSetup ? 'SETUP MODE' : 'MAIN APP MODE');
 
 if (isWidget) {
   // Load widget components
@@ -16,6 +17,15 @@ if (isWidget) {
     createRoot(document.getElementById('root')).render(
       <StrictMode>
         <WidgetApp />
+      </StrictMode>
+    )
+  });
+} else if (isSetup) {
+  // Load setup components
+  import('../setup/components/SetupPage.jsx').then(({ default: SetupPage }) => {
+    createRoot(document.getElementById('root')).render(
+      <StrictMode>
+        <SetupPage />
       </StrictMode>
     )
   });
