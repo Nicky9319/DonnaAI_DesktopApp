@@ -695,14 +695,17 @@ ipcMain.handle('widget:setIgnoreMouseEvents', async (event, ignore, options) => 
 // Setup window handlers
 ipcMain.handle('setup:continue', () => {
   console.log('Setup continue button pressed');
-  if (setupWindow && !setupWindow.isDestroyed()) {
-    console.log('Closing setup window...');
-    setupWindow.close();
-    setupWindow = null;
-  }
-  // Create main and widget windows
+  // First create the main and widget windows
   console.log('Creating main and widget windows...');
   createMainAndWidgetWindows();
+
+  // Then destroy the setup window
+  if (setupWindow && !setupWindow.isDestroyed()) {
+    console.log('Destroying setup window...');
+    app.isQuiting = false; // Ensure we don't trigger app quit
+    setupWindow.destroy(); // Use destroy() instead of close() to prevent the close event handler
+    setupWindow = null;
+  }
 });
 
 // Widget undetectability handlers
