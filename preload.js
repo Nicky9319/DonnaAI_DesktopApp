@@ -33,6 +33,12 @@ if (process.contextIsolated) {
       disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
       setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
       setupContinue: () => ipcRenderer.invoke('setup:continue'),
+      // WSL Setup APIs
+      checkWSL: () => ipcRenderer.invoke('checkWSL'),
+      installWSL: () => ipcRenderer.invoke('installWSL'),
+      checkWslConfigDone: () => ipcRenderer.invoke('checkWslConfigDone'),
+      configureWslDistro: () => ipcRenderer.invoke('configureWslDistro'),
+      restartSystem: () => ipcRenderer.invoke('restartSystem'),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {
@@ -72,6 +78,12 @@ else{
     disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
     setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
     setupContinue: () => ipcRenderer.invoke('setup:continue'),
+    // WSL Setup APIs
+    checkWSL: () => ipcRenderer.invoke('checkWSL'),
+    installWSL: () => ipcRenderer.invoke('installWSL'),
+    checkWslConfigDone: () => ipcRenderer.invoke('checkWslConfigDone'),
+    configureWslDistro: () => ipcRenderer.invoke('configureWslDistro'),
+    restartSystem: () => ipcRenderer.invoke('restartSystem'),
   }
   window.widgetAPI = {
     closeWidget: () => ipcRenderer.invoke('widget:close'),

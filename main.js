@@ -749,6 +749,75 @@ ipcMain.handle('window:disableInteraction', () => {
   }
 });
 
+// WSL Setup APIs
+ipcMain.handle('installWSL', async () => {
+  try {
+    await ConfigSetupWslBeforeRestart();
+    return { success: true };
+  } catch (error) {
+    console.error('Error installing WSL:', error);
+    throw error;
+  }
+});
+
+// Check if WSL is installed
+ipcMain.handle('checkWSL', async () => {
+  try {
+    const status = await GetWslSTATUS();
+    const statusOutput = status.toString().replace(/\x00/g, '').trim();
+    
+    // Check if WSL is properly installed (no error messages)
+    const enableVMPStatement = `Please enable the "Virtual Machine Platform" optional component and ensure virtualization is enabled in the BIOS.`;
+    const commandToEnableStatement = `Enable "Virtual Machine Platform" by running: wsl.exe --install --no-distribution For information please visit https://aka.ms/enablevirtualization`;
+    
+    if (statusOutput.includes(enableVMPStatement) || statusOutput.includes(commandToEnableStatement)) {
+      return false; // WSL needs installation
+    }
+    
+    // Check if status contains error indicators
+    if (statusOutput.toLowerCase().includes('error') || statusOutput.toLowerCase().includes('not found')) {
+      return false;
+    }
+    
+    return true; // WSL is installed
+  } catch (error) {
+    console.error('Error checking WSL:', error);
+    return false;
+  }
+});
+
+// Global flag to prevent concurrent WSL configuration
+let wslConfigurationInProgress = false;
+
+ipcMain.handle('checkWslConfigDone', async () => {
+  if (wslConfigurationInProgress) {
+    console.log('WSL configuration already in progress, returning...');
+    return false;
+  }
+  
+  wslConfigurationInProgress = true;
+  try {
+    console.log('Starting WSL configuration process...');
+    const result = await checkAndConfigureWslDistro('Ubuntu-22.04');
+    console.log('WSL configuration process completed with result:', result);
+    return result;
+  } catch (error) {
+    console.error('Error checking/configuring WSL distro:', error);
+    return false;
+  } finally {
+    wslConfigurationInProgress = false;
+  }
+});
+
+ipcMain.handle('restartSystem', async () => {
+  try {
+    exec('shutdown /r /t 0');
+    return { success: true };
+  } catch (error) {
+    console.error('Error restarting system:', error);
+    throw error;
+  }
+});
 
 // IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
 
@@ -1069,7 +1138,7 @@ function checkDistroPresent(distroName){
           }
 
           if (stdout) {
-              output = stdout.toString().replace(/\x00/g, '').trim();
+              const output = stdout.toString().replace(/\x00/g, '').trim();
               if(output.split('\n').map(line => line.replace(/\r$/, '')).includes(distroName)) {
                   console.log("Distro Found");
                   resolve(true);
@@ -1093,23 +1162,423 @@ function checkDistroPresent(distroName){
 // !!!! Need to be Updated
 /** Check if All the Configurations Needed to Run Containers Inside a Distro Is Completed or Not, Return -> Boolean */
 function checkWslConfigDone(distroName){
-  return new Promise((resolve, reject) => {
-      checkNvidiaContainerConfigDone(distroName).then((result) => {
-          if (!result) {
+  return new Promise(async (resolve, reject) => {
+      try {
+          // First check if distro exists
+          const distroExists = await checkDistroPresent(distroName);
+          if (!distroExists) {
+              console.log('Distro does not exist');
               resolve(false);
               return;
           }
 
-          checkPodmanConfigDone(distroName).then((result) => {
-              resolve(result);
+          // Check if Docker is installed
+          const dockerInstalled = await checkDockerInstalled(distroName);
+          if (!dockerInstalled) {
+              console.log('Docker is not installed');
+              resolve(false);
               return;
-          })
-      })
+          }
 
+          // Check if Docker service is running
+          const dockerRunning = await checkDockerServiceRunning(distroName);
+          if (!dockerRunning) {
+              console.log('Docker service is not running');
+              resolve(false);
+              return;
+          }
 
+          // Check if Docker is configured to listen on TCP port 2375
+          const dockerConfigured = await checkDockerTCPConfig(distroName);
+          if (!dockerConfigured) {
+              console.log('Docker TCP configuration is not set up');
+              resolve(false);
+              return;
+          }
 
+          console.log('All WSL configurations are complete');
+          resolve(true);
+      } catch (error) {
+          console.error('Error checking WSL config:', error);
+          resolve(false);
+      }
+  });
+}
 
-  })
+/** Check if Docker is installed in the distro */
+function checkDockerInstalled(distroName) {
+  return new Promise((resolve, reject) => {
+      const command = `wsl -d ${distroName} --exec bash -c "which docker"`;
+      exec(command, (error, stdout, stderr) => {
+          if (error || stderr) {
+              console.log('Docker is not installed');
+              resolve(false);
+              return;
+          }
+          if (stdout && stdout.trim()) {
+              console.log('Docker is installed');
+              resolve(true);
+              return;
+          }
+          resolve(false);
+      });
+  });
+}
+
+/** Check if Docker service is running in the distro */
+function checkDockerServiceRunning(distroName) {
+  return new Promise((resolve, reject) => {
+      const command = `wsl -d ${distroName} --exec bash -c "systemctl is-active --quiet docker"`;
+      exec(command, (error, stdout, stderr) => {
+          if (error) {
+              console.log('Docker service is not running');
+              resolve(false);
+              return;
+          }
+          console.log('Docker service is running');
+          resolve(true);
+      });
+  });
+}
+
+/** Check if Docker is configured to listen on TCP port 2375 */
+function checkDockerTCPConfig(distroName) {
+  return new Promise((resolve, reject) => {
+    // First check if the systemd configuration file exists and has correct content
+    const configCheck = `wsl -d ${distroName} --exec bash -c "test -f /etc/systemd/system/docker.service.d/setup.conf && grep -q 'tcp://127.0.0.1:2375' /etc/systemd/system/docker.service.d/setup.conf"`;
+    exec(configCheck, (configError, configStdout, configStderr) => {
+      if (configError) {
+        console.log('Docker TCP configuration file not found or has incorrect content');
+        resolve(false);
+        return;
+      }
+      
+      // Then test the actual connection using curl
+      const curlCheck = `wsl -d ${distroName} --exec bash -c "curl -s http://127.0.0.1:2375/version"`;
+      exec(curlCheck, (curlError, curlStdout, curlStderr) => {
+        if (curlError || !curlStdout || !curlStdout.trim()) {
+          console.log('Docker TCP configuration file exists but connection test failed');
+          resolve(false);
+          return;
+        }
+        
+        // Check if the response contains Docker version info
+        if (curlStdout.includes('Version') || curlStdout.includes('ApiVersion')) {
+          console.log('Docker TCP configuration is set up and responding correctly');
+          resolve(true);
+        } else {
+          console.log('Docker TCP configuration file exists but response is not valid Docker API');
+          resolve(false);
+        }
+      });
+    });
+  });
+}
+
+/** Check if user exists in the distro */
+function checkUserExists(distroName, username) {
+  return new Promise((resolve, reject) => {
+    const command = `wsl -d ${distroName} --exec bash -c "id -u ${username}"`;
+    exec(command, (error, stdout, stderr) => {
+      if (error || stderr) {
+        console.log(`User ${username} does not exist in distro`);
+        resolve(false);
+        return;
+      }
+      console.log(`User ${username} exists in distro`);
+      resolve(true);
+    });
+  });
+}
+
+/** Complete distro configuration - checks everything and configures if needed */
+async function ConfigDistro(distroName) {
+  console.log('Starting complete distro configuration check and setup...');
+  
+  try {
+    // 1. Check if distro exists
+    const distroExists = await checkDistroPresent(distroName);
+    if (!distroExists) {
+      console.log('Distro does not exist, installing...');
+      await InstallWslDistroandConfigUser('donna', 'harvey', distroName);
+      console.log('Distro installation completed');
+    } else {
+      console.log('Distro exists, checking configuration...');
+    }
+
+    // 2. Check if Docker is installed and configured
+    const dockerInstalled = await checkDockerInstalled(distroName);
+    const dockerRunning = await checkDockerServiceRunning(distroName);
+    const dockerConfigured = await checkDockerTCPConfig(distroName);
+    
+    if (!dockerInstalled || !dockerRunning || !dockerConfigured) {
+      console.log('Docker setup incomplete, running setup script...');
+      await runSetupScript(distroName);
+      console.log('Setup script completed');
+    } else {
+      console.log('Docker is already properly configured');
+    }
+
+    console.log('All distro configurations are complete!');
+    return true;
+    
+  } catch (error) {
+    console.error('Error in ConfigDistro:', error);
+    return false;
+  }
+}
+
+/** Intelligent WSL distro check and configuration - only performs missing steps */
+async function checkAndConfigureWslDistro(distroName) {
+  console.log('Starting intelligent WSL distro check and configuration...');
+  
+  try {
+    // 1. Check if distro exists
+    const distroExists = await checkDistroPresent(distroName);
+    if (!distroExists) {
+      console.log('Distro does not exist, installing from scratch...');
+      await InstallWslDistroandConfigUser('donna', 'harvey', distroName);
+      console.log('Distro installation completed');
+      return true;
+    }
+    
+    console.log('Distro exists, checking user and Docker configuration step by step...');
+    
+    // 2. Check if required user exists
+    const userExists = await checkUserExists(distroName, 'donna');
+    if (!userExists) {
+      console.log('Required user does not exist, creating user...');
+      // Note: This would need a separate function to create just the user
+      // For now, we'll run the full setup script which includes user creation
+      console.log('Running setup script to create user and configure Docker...');
+      try {
+        await runSetupScript(distroName);
+        console.log('Setup script completed successfully');
+        return true;
+      } catch (error) {
+        console.error('Setup script failed for user creation:', error);
+        return false;
+      }
+    }
+    
+    console.log('User exists, checking Docker configuration...');
+    
+    // 3. Check Docker installation
+    const dockerInstalled = await checkDockerInstalled(distroName);
+    if (!dockerInstalled) {
+      console.log('Docker not installed, installing Docker...');
+      await installDockerInDistro(distroName);
+      console.log('Docker installation completed');
+    } else {
+      console.log('Docker is already installed');
+    }
+    
+    // 4. Check Docker service status
+    const dockerRunning = await checkDockerServiceRunning(distroName);
+    if (!dockerRunning) {
+      console.log('Docker service not running, starting Docker service...');
+      await startDockerService(distroName);
+      console.log('Docker service started');
+    } else {
+      console.log('Docker service is already running');
+    }
+    
+    // 5. Check Docker TCP configuration
+    const dockerConfigured = await checkDockerTCPConfig(distroName);
+    if (!dockerConfigured) {
+      console.log('Docker TCP configuration missing, configuring Docker...');
+      await configureDockerTCP(distroName);
+      console.log('Docker TCP configuration completed');
+    } else {
+      console.log('Docker TCP configuration is already set up');
+    }
+    
+    // 6. Final verification
+    const finalDockerInstalled = await checkDockerInstalled(distroName);
+    const finalDockerRunning = await checkDockerServiceRunning(distroName);
+    const finalDockerConfigured = await checkDockerTCPConfig(distroName);
+    
+    if (finalDockerInstalled && finalDockerRunning && finalDockerConfigured) {
+      console.log('All WSL and Docker configurations are complete!');
+      return true;
+    } else {
+      console.log('Some configurations are still incomplete, running full setup script as fallback...');
+      try {
+        await runSetupScript(distroName);
+        console.log('Full setup script completed successfully');
+        
+        // Final validation after fallback script
+        const postScriptDockerInstalled = await checkDockerInstalled(distroName);
+        const postScriptDockerRunning = await checkDockerServiceRunning(distroName);
+        const postScriptDockerConfigured = await checkDockerTCPConfig(distroName);
+        
+        if (postScriptDockerInstalled && postScriptDockerRunning && postScriptDockerConfigured) {
+          console.log('Fallback setup script validation successful');
+          return true;
+        } else {
+          console.error('Fallback setup script validation failed');
+          console.error(`Docker installed: ${postScriptDockerInstalled}, running: ${postScriptDockerRunning}, configured: ${postScriptDockerConfigured}`);
+          return false;
+        }
+      } catch (error) {
+        console.error('Fallback setup script failed:', error);
+        return false;
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error in checkAndConfigureWslDistro:', error);
+    return false;
+  }
+}
+
+/** Install Docker in the distro */
+function installDockerInDistro(distroName) {
+  return new Promise((resolve, reject) => {
+    const commands = [
+      'apt update',
+      'apt install -y apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release',
+      'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg',
+      'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
+      'apt update',
+      'apt install -y docker-ce docker-ce-cli containerd.io'
+    ];
+
+    let currentCommand = 0;
+    
+    function executeNextCommand() {
+      if (currentCommand >= commands.length) {
+        resolve();
+        return;
+      }
+      
+      const command = commands[currentCommand];
+      console.log(`Executing: ${command}`);
+      
+      exec(`wsl -d ${distroName} --exec bash -c "${command}"`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing command: ${command}`, error);
+          // Continue with next command even if this one fails
+        }
+        currentCommand++;
+        executeNextCommand();
+      });
+    }
+    
+    executeNextCommand();
+  });
+}
+
+/** Start Docker service in the distro */
+function startDockerService(distroName) {
+  return new Promise((resolve, reject) => {
+    const commands = [
+      'systemctl enable docker',
+      'systemctl start docker',
+      'systemctl status docker'
+    ];
+
+    let currentCommand = 0;
+    
+    function executeNextCommand() {
+      if (currentCommand >= commands.length) {
+        resolve();
+        return;
+      }
+      
+      const command = commands[currentCommand];
+      console.log(`Executing: ${command}`);
+      
+      exec(`wsl -d ${distroName} --exec bash -c "${command}"`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing command: ${command}`, error);
+          // Continue with next command even if this one fails
+        }
+        currentCommand++;
+        executeNextCommand();
+      });
+    }
+    
+    executeNextCommand();
+  });
+}
+
+/** Run the setup script in the distro */
+function runSetupScript(distroName) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('Copying setup script to distro...');
+      
+      // 1. Create setup directory as donna user
+      await executeWslCommand('mkdir -p ~/wslSetupScript', distroName, 'donna');
+      
+      // 2. Copy setup script from host to distro
+      const copyCommand = `cp ./setup.sh ~/wslSetupScript/dockerSetup.sh`;
+      await executeWslCommand(copyCommand, distroName, 'donna');
+      
+      // 3. Make script executable
+      await executeWslCommand('chmod +x ~/wslSetupScript/dockerSetup.sh', distroName, 'donna');
+      
+      // 4. Execute the setup script with sudo privileges as donna user
+      console.log('Executing setup script with sudo as donna user...');
+      await executeWslCommand('echo harvey | sudo -S ~/wslSetupScript/dockerSetup.sh', distroName, 'donna');
+      
+      // 5. Validate that the setup was successful
+      console.log('Validating setup completion...');
+      const dockerInstalled = await checkDockerInstalled(distroName);
+      const dockerRunning = await checkDockerServiceRunning(distroName);
+      const dockerConfigured = await checkDockerTCPConfig(distroName);
+      
+      if (dockerInstalled && dockerRunning && dockerConfigured) {
+        console.log('Setup script executed and validated successfully');
+        resolve(true);
+      } else {
+        console.error('Setup script completed but validation failed');
+        console.error(`Docker installed: ${dockerInstalled}, running: ${dockerRunning}, configured: ${dockerConfigured}`);
+        reject(new Error('Setup script validation failed'));
+      }
+      
+    } catch (error) {
+      console.error('Error running setup script:', error);
+      reject(error);
+    }
+  });
+}
+
+/** Configure Docker to listen on TCP port 2375 */
+function configureDockerTCP(distroName) {
+  return new Promise((resolve, reject) => {
+    const commands = [
+      'mkdir -p /etc/systemd/system/docker.service.d',
+      'tee /etc/systemd/system/docker.service.d/setup.conf > /dev/null <<EOL\n[Service]\nExecStart=\nExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:2375\nEOL',
+      'systemctl daemon-reexec',
+      'systemctl daemon-reload',
+      'systemctl restart docker'
+    ];
+
+    let currentCommand = 0;
+    
+    function executeNextCommand() {
+      if (currentCommand >= commands.length) {
+        resolve();
+        return;
+      }
+      
+      const command = commands[currentCommand];
+      console.log(`Executing: ${command}`);
+      
+      exec(`wsl -d ${distroName} --exec bash -c "${command}"`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing command: ${command}`, error);
+          // Continue with next command even if this one fails
+        }
+        currentCommand++;
+        executeNextCommand();
+      });
+    }
+    
+    executeNextCommand();
+  });
 }
 
 /** Handled the Actions to take based on the Wsl State */
@@ -1137,15 +1606,15 @@ function ConfigSetupWslBeforeRestart(){
   return new Promise(async (resolve, reject) => {
       console.log("Starting Pre-requisites")
 
-      VMPComponentActivateCommand = "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
+      const VMPComponentActivateCommand = "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart"
       try {await spawnPowerShellCommand(VMPComponentActivateCommand);} catch(error) {}
       console.log("VMP Activated")
 
-      WslInstallCommand = `wsl.exe --install --no-distribution`;
+      const WslInstallCommand = `wsl.exe --install --no-distribution`;
       await spawnPowerShellCommand(WslInstallCommand);
       console.log("Wsl No Distro Installed")
 
-      KernelUpdateCommand = `wsl.exe --update`;
+      const KernelUpdateCommand = `wsl.exe --update`;
       await spawnPowerShellCommand(KernelUpdateCommand);
       resolve();
   });
@@ -1169,7 +1638,7 @@ function InstallWslDistroandConfigUser(username , password , distroName){
 
     InstallDistroWSL(signal , distroName);
 
-    EventDistroInstalled = new Promise(async (resolve, reject) => {
+    const EventDistroInstalled = new Promise(async (resolve, reject) => {
         while(true){
             // console.log("Checking for Distro Installation");
             const isPresent = await checkDistroPresent(distroName);
@@ -1177,8 +1646,10 @@ function InstallWslDistroandConfigUser(username , password , distroName){
 
             if(isPresent){
                 console.log("Distro Found");
-                controller.abort();
-                resolve();
+                setTimeout(() => {
+                  controller.abort();
+                  resolve();
+                }, 10000);
                 break;
             }
             
@@ -1305,13 +1776,22 @@ function MakeWslSetupDirectory(username ,  distroName){
 // !!!! Need to be Updated
 /** Copying Sh Script From Host machine OS to Wsl for a particular user inside a particular Distro*/
 function CopyShScriptToWsl(username , distroName){
-  return new Promise((resolve, reject) => {
-    commandToExecute = `cp ./wslPodmanSetup.sh ~/wslSetupScript`
-    logger.info('Main Js: Copying Sh Script to Wsl')
-    executeWslCommand(commandToExecute , distroName , username).then(() => {
-        logger.info('Main Js: Sh Script Copied to Wsl')
-        resolve();
-    });
+  return new Promise(async (resolve, reject) => {
+    try {
+      const makingDirectoryCommand = `mkdir -p ~/wslSetupScript`
+      console.log("Making Directory for Storing Wsl Setup Script")
+      await executeWslCommand(makingDirectoryCommand , distroName , username);
+      console.log("Directory Made for Storing Wsl Setup Script")
+
+      const commandToExecute = `cp ./setup.sh ~/wslSetupScript/dockerSetup.sh`
+      console.log('Main Js: Copying Sh Script to Wsl')
+      await executeWslCommand(commandToExecute , distroName , username);
+      console.log('Main Js: Sh Script Copied to Wsl')
+      resolve();
+    } catch (error) {
+      console.error('Error copying script to WSL:', error);
+      reject(error);
+    }
   })
 }
 
@@ -1320,16 +1800,16 @@ function CopyShScriptToWsl(username , distroName){
 function ExecuteWslConfigShScript(username , password , distroName){
   return new Promise((resolve, reject) => {
     console.log("Running the Script to Configure WSL Distro")
-    commandToExecute = `cd /home/${username}/wslSetupScript  && echo ${password} | sudo -S bash wslPodmanSetup.sh`
+    const commandToExecute = `cd /home/${username}/wslSetupScript  && echo ${password} | sudo -S bash setup.sh`
     console.log(password);
     // executeWslCommand(commandToExecute , distroName , username).then(() => {
     //     console.log("Script Executed !!!")
     //     resolve();
     // });
-    logger.info('Main Js: Executing the Sh Script to Configure WSL Distro')
-    const ExecuteCMD = `wsl -d ${distroName} -u ${username} --exec bash -c "cd /home/${username}/wslSetupScript  && echo ${password} | sudo -S bash wslPodmanSetup.sh"`
+    console.log('Main Js: Executing the Sh Script to Configure WSL Distro')
+    const ExecuteCMD = `wsl -d ${distroName} -u ${username} --exec bash -c "cd /home/${username}/wslSetupScript  && echo ${password} | sudo -S bash dockerSetup.sh"`
     spawnPowerShellCommand(ExecuteCMD).then(() => {
-        logger.info('Main Js: Script Executed and configuration Completed')
+        console.log('Main Js: Script Executed and configuration Completed')
         resolve();
     });
   })
@@ -1360,8 +1840,8 @@ function executeWslCommand(command , distroName , username = "root" , needOutput
         }
         else{
           console.log("Error Exist In this Command");
-          resolve("Error");
-          // reject(new Error(`Command failed with code ${code}: ${stderr}`));
+          console.log("Error details:", stderr);
+          reject(new Error(`Command failed with code ${code}: ${stderr}`));
         }
       });
   });
