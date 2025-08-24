@@ -19,6 +19,9 @@ const {url} = require('inspector');
 const Docker = require('dockerode');
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
+// Import our custom logger
+const logger = require('./logger');
+
 import { initDb,
   getAgentsInfo,
   addAgentInfo,
@@ -41,7 +44,7 @@ let mainWindow, store, widgetWindow, setupWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
 
-log.transports.file.level = 'info';
+// Configure auto-updater logging
 autoUpdater.logger = log;
 
 autoUpdater.autoDownload = true;
@@ -62,7 +65,7 @@ const isDev = process.env.NODE_ENV === 'development';
 // IPC On Section !!! ------------------------------------------------------------------------------------------------------
 
 ipcMain.on('change-window', (event, arg) => {
-  console.log("Changing The Application Window !!!!")
+  logger.info("Changing The Application Window", { window: arg });
   window_name = "html/" + arg;
   // window_name = arg;
   mainWindow.loadFile(window_name);
@@ -78,7 +81,7 @@ ipcMain.on('change-window', (event, arg) => {
 
 // Setup window creation function
 function createSetupWindow() {
-  console.log('Creating setup window...');
+  logger.info('Creating setup window');
   setupWindow = new BrowserWindow({
     width: 600,
     height: 400,
@@ -103,11 +106,11 @@ function createSetupWindow() {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     const baseUrl = process.env['ELECTRON_RENDERER_URL'];
     const setupUrl = baseUrl.endsWith('/') ? baseUrl + '?setup=true' : baseUrl + '/?setup=true';
-    console.log('Loading setup window from:', setupUrl);
+    logger.debug('Loading setup window from URL', { url: setupUrl });
     setupWindow.loadURL(setupUrl);
   } else {
     const setupPath = join(__dirname, '../renderer/index.html');
-    console.log('Loading setup window from:', setupPath);
+    logger.debug('Loading setup window from file', { path: setupPath });
     setupWindow.loadFile(setupPath);
   }
 
@@ -117,6 +120,7 @@ function createSetupWindow() {
   setupWindow.on('close', (event) => {
     if (!app.isQuiting) {
       event.preventDefault();
+      logger.info('Setup window closed without continuing, quitting app');
       // If setup window is closed without continuing, quit the app
       app.quit();
     }
@@ -187,7 +191,7 @@ class UndetectableWidgetWindow {
       if (this.window && !this.window.isDestroyed()) {
         this.devToolsOpen = true;
         this.window.setIgnoreMouseEvents(false);
-        console.log('DevTools opened: Widget window is now interactive.');
+        logger.debug('DevTools opened: Widget window is now interactive');
       }
     });
 
@@ -195,13 +199,13 @@ class UndetectableWidgetWindow {
       if (this.window && !this.window.isDestroyed()) {
         this.devToolsOpen = false;
         this.window.setIgnoreMouseEvents(true, { forward: true });
-        console.log('DevTools closed: Widget window is now click-through.');
+        logger.debug('DevTools closed: Widget window is now click-through');
       }
     });
 
     // Widget window event handlers
     this.window.on('ready-to-show', () => {
-      console.log('Widget window ready to show');
+      logger.debug('Widget window ready to show');
       if (this.window && !this.window.isDestroyed()) {
         this.window.hide();
         if (!this.devToolsOpen) {
@@ -212,7 +216,7 @@ class UndetectableWidgetWindow {
     });
 
     this.window.on('show', () => {
-      console.log('Widget window shown, ensuring click-through');
+      logger.debug('Widget window shown, ensuring click-through');
       if (this.window && !this.window.isDestroyed()) {
         if (!this.devToolsOpen) {
           this.window.setIgnoreMouseEvents(true, { forward: true });
@@ -236,7 +240,7 @@ class UndetectableWidgetWindow {
     });
 
     this.window.on('closed', () => {
-      console.log('Widget window closed');
+      logger.info('Widget window closed');
     });
 
     // Listen for mouse events to enable/disable click-through dynamically
@@ -249,19 +253,19 @@ class UndetectableWidgetWindow {
         // Function to enable click-through
         window.enableClickThrough = () => {
           window.isClickThroughEnabled = true;
-          console.log('Click-through enabled via renderer');
+          // console.log('Click-through enabled via renderer');
         };
         
         // Function to disable click-through
         window.disableClickThrough = () => {
           window.isClickThroughEnabled = false;
-          console.log('Click-through disabled via renderer');
+          // console.log('Click-through disabled via renderer');
         };
         
         // Function to toggle click-through
         window.toggleClickThrough = () => {
           window.isClickThroughEnabled = !window.isClickThroughEnabled;
-          console.log('Click-through toggled:', window.isClickThroughEnabled);
+          // console.log('Click-through toggled:', window.isClickThroughEnabled);
         };
         
         // Expose functions globally
@@ -272,7 +276,7 @@ class UndetectableWidgetWindow {
           isEnabled: () => window.isClickThroughEnabled
         };
         
-        console.log('Widget click-through functions initialized');
+        // console.log('Widget click-through functions initialized');
         `);
       } catch (error) {
         console.error('Error setting up widget click-through functions:', error);
@@ -281,7 +285,7 @@ class UndetectableWidgetWindow {
   }
 
   setIgnoreMouseEvents(ignore, options = {}) {
-    console.log(`[UndetectableWidgetWindow] Setting ignore mouse events: ${ignore}`);
+    logger.debug(`Setting ignore mouse events: ${ignore}`, { options });
     
     // When ignore is true, we want click-through (forward events to underlying apps)
     // When ignore is false, we want interaction with our window
@@ -375,11 +379,11 @@ class UndetectableWidgetWindow {
 function createWidgetWindow() {
   // Check if widget window already exists and is not destroyed
   if (widgetWindow && !widgetWindow.isDestroyed()) {
-    console.log('Widget window already exists, focusing it');
+    logger.info('Widget window already exists, focusing it');
     try {
       widgetWindow.focus();
     } catch (error) {
-      console.error('Error focusing widget window:', error);
+      logger.error('Error focusing widget window', error);
     }
     return;
   }
@@ -389,17 +393,21 @@ function createWidgetWindow() {
     undetectabilityEnabled: widgetUndetectabilityEnabled
   });
 
+  logger.info('Widget window created', { undetectabilityEnabled: widgetUndetectabilityEnabled });
+
   // Load the widget window with proper React support
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     const baseUrl = process.env['ELECTRON_RENDERER_URL'];
     const widgetUrl = baseUrl.endsWith('/') ? baseUrl + '?widget=true' : baseUrl + '/?widget=true';
-    console.log('Widget URL:', widgetUrl);
+    logger.debug('Loading widget from URL', { url: widgetUrl });
     widgetWindow.window.loadURL(widgetUrl).catch((error) => {
-      console.error('Failed to load widget URL:', error);
+      logger.error('Failed to load widget URL', error);
     });
   } else {
-    widgetWindow.window.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
-      console.error('Failed to load widget file:', error);
+    const widgetPath = join(__dirname, '../widget/index.html');
+    logger.debug('Loading widget from file', { path: widgetPath });
+    widgetWindow.window.loadFile(widgetPath).catch((error) => {
+      logger.error('Failed to load widget file', error);
     });
   }
 
@@ -411,6 +419,7 @@ function createWidgetWindow() {
 // Function to safely recreate widget window
 function recreateWidgetWindow() {
   try {
+    logger.info('Recreating widget window');
     if (widgetWindow && !widgetWindow.isDestroyed()) {
       widgetWindow.close();
     }
@@ -418,12 +427,14 @@ function recreateWidgetWindow() {
       createWidgetWindow();
     }, 100);
   } catch (error) {
-    console.error('Error recreating widget window:', error);
+    logger.error('Error recreating widget window', error);
   }
 }
 
 // Function to create main and widget windows
 function createMainAndWidgetWindows() {
+  logger.info('Creating main and widget windows');
+  
   // Creating Main Window
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -445,9 +456,12 @@ function createMainAndWidgetWindows() {
 
   // Loading HTML and Configuring the Main Window
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    logger.debug('Loading main window from URL', { url: process.env['ELECTRON_RENDERER_URL'] });
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    const mainPath = join(__dirname, '../renderer/index.html');
+    logger.debug('Loading main window from file', { path: mainPath });
+    mainWindow.loadFile(mainPath);
   }
 
   mainWindow.setMenuBarVisibility(false);
@@ -456,6 +470,7 @@ function createMainAndWidgetWindows() {
   mainWindow.on('close', (event) => {
     if (!app.isQuiting) {
       event.preventDefault();
+      logger.info('Main window closed, hiding instead of quitting');
       mainWindow.hide();
     }
   });
@@ -470,6 +485,7 @@ function createMainAndWidgetWindows() {
   if (process.platform === 'win32') {
     const urlArg = process.argv.find(arg => arg.startsWith('agentbed://'));
     if (urlArg) {
+      logger.info('Protocol URL found in arguments', { url: urlArg });
       mainWindow.webContents.once('did-finish-load', () => {
         handleWebEventTrigger(urlArg)
       });
@@ -593,14 +609,15 @@ ipcMain.handle('window:maximize', () => {
 ipcMain.handle('widget:close', () => {
   try {
     if (widgetWindow && !widgetWindow.isDestroyed()) {
+      logger.info('Closing widget window');
       widgetWindow.close();
       return true;
     } else {
-      console.log('Widget window is not available or already destroyed');
+      logger.warn('Widget window is not available or already destroyed');
       return false;
     }
   } catch (error) {
-    console.error('Error closing widget window:', error);
+    logger.error('Error closing widget window', error);
     return false;
   }
 });
@@ -642,15 +659,16 @@ ipcMain.handle('widget:maximize', () => {
 ipcMain.handle('widget:show', () => {
   try {
     if (widgetWindow && !widgetWindow.isDestroyed()) {
+      logger.info('Showing widget window');
       widgetWindow.show();
       return true;
     } else {
-      console.log('Widget window is not available or already destroyed, creating new one');
+      logger.info('Widget window is not available or already destroyed, creating new one');
       createWidgetWindow();
       return true;
     }
   } catch (error) {
-    console.error('Error showing widget window:', error);
+    logger.error('Error showing widget window', error);
     return false;
   }
 });
@@ -694,14 +712,14 @@ ipcMain.handle('widget:setIgnoreMouseEvents', async (event, ignore, options) => 
 
 // Setup window handlers
 ipcMain.handle('setup:continue', () => {
-  console.log('Setup continue button pressed');
+  logger.info('Setup continue button pressed');
   // First create the main and widget windows
-  console.log('Creating main and widget windows...');
+  logger.info('Creating main and widget windows');
   createMainAndWidgetWindows();
 
   // Then destroy the setup window
   if (setupWindow && !setupWindow.isDestroyed()) {
-    console.log('Destroying setup window...');
+    logger.info('Destroying setup window');
     app.isQuiting = false; // Ensure we don't trigger app quit
     setupWindow.destroy(); // Use destroy() instead of close() to prevent the close event handler
     setupWindow = null;
@@ -791,18 +809,18 @@ let wslConfigurationInProgress = false;
 
 ipcMain.handle('checkWslConfigDone', async () => {
   if (wslConfigurationInProgress) {
-    console.log('WSL configuration already in progress, returning...');
+    logger.warn('WSL configuration already in progress, returning');
     return false;
   }
   
   wslConfigurationInProgress = true;
   try {
-    console.log('Starting WSL configuration process...');
+    logger.info('Starting WSL configuration process');
     const result = await checkAndConfigureWslDistro('Ubuntu-22.04');
-    console.log('WSL configuration process completed with result:', result);
+    logger.info('WSL configuration process completed', { result });
     return result;
   } catch (error) {
-    console.error('Error checking/configuring WSL distro:', error);
+    logger.error('Error checking/configuring WSL distro', error);
     return false;
   } finally {
     wslConfigurationInProgress = false;
@@ -811,10 +829,11 @@ ipcMain.handle('checkWslConfigDone', async () => {
 
 ipcMain.handle('restartSystem', async () => {
   try {
+    logger.info('Restarting system');
     exec('shutdown /r /t 0');
     return { success: true };
   } catch (error) {
-    console.error('Error restarting system:', error);
+    logger.error('Error restarting system', error);
     throw error;
   }
 });
@@ -830,32 +849,33 @@ ipcMain.handle('restartSystem', async () => {
 // Auto Update Section !!! -------------------------------------------------------------------------------------
 
 autoUpdater.on('checking-for-update', () => {
-  console.log("Checking for Update")
-  log.info('Checking for update...');
+  logger.info("Checking for Update");
 });
 
 autoUpdater.on('update-available', (info) => {
   // autoUpdater.downloadUpdate();
-  log.info('Update available.');
+  logger.info('Update available', info);
 });
 
 autoUpdater.on('update-not-available', (info) => {
-  log.info('Update not available.');
+  logger.info('Update not available', info);
 });
 
 autoUpdater.on('error', (err) => {
-  log.error('Error in auto-updater. ' + err);
+  logger.error('Error in auto-updater', err);
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
-  let log_message = 'Download speed: ' + progressObj.bytesPerSecond;
-  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-  log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')';
-  log.info(log_message);
+  logger.info('Update download progress', {
+    bytesPerSecond: progressObj.bytesPerSecond,
+    percent: progressObj.percent,
+    transferred: progressObj.transferred,
+    total: progressObj.total
+  });
 });
 
 autoUpdater.on('update-downloaded', (info) => {
-  log.info('Update downloaded');
+  logger.info('Update downloaded', info);
 });
 
 // Auto Updater Section END !!! ----------------------------------------------------------------------------------
@@ -923,13 +943,14 @@ async function spawnPowerShellCommand(command , needOutput = false){
 
 async function executeCMDCommand(command, needOutput = false) {
   return new Promise((resolve, reject) => {
+    logger.debug('Executing CMD command', { command });
     exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.log(`Exec error: ${error}`);
+        logger.error('CMD command execution error', { command, error: error.message });
         reject(error);
       } else {
-        if (stdout) console.log(`Stdout: ${stdout}`);
-        if (stderr) console.log(`Stderr: ${stderr}`);
+        if (stdout) logger.debug('CMD command stdout', { command, stdout });
+        if (stderr) logger.debug('CMD command stderr', { command, stderr });
 
         if (needOutput) resolve(stdout);
         else resolve();
@@ -1872,22 +1893,21 @@ function executeWslCommand(command , distroName , username = "root" , needOutput
 
 
 async function handleEvent(eventInfo) {
-  console.log("Event Triggered")
-  // console.log(eventInfo);
-  console.log(eventInfo["AGENT_ID"])
+  logger.info("Event triggered", { eventType: eventInfo["EVENT"], agentId: eventInfo["AGENT_ID"] });
 
   if (eventInfo["EVENT"] == "INSTALL_AGENT") {
+    logger.info("Installing agent", { agentId: eventInfo["AGENT_ID"], agentVersion: eventInfo["AGENT_VERSION"] });
     mainWindow.webContents.send('install-agent', agentId = eventInfo["AGENT_ID"], agentVersion = eventInfo["AGENT_VERSION"])
   }
   else if (eventInfo["EVENT"] == "UI_AUTOMATE") {
+    logger.info("UI automation event", { data: eventInfo["DATA"] });
     uiAutomateHandler(eventInfo["DATA"]);
   }
 
 }
 
 async function handleWebEventTrigger(url) {
-  console.log("Event Triggered")
-  console.log(url);
+  logger.info("Web event triggered", { url });
   let eventInfo = url.replace(/^agentbed:\/\//i, '');
 
   if (eventInfo.endsWith('/')) {
@@ -1897,10 +1917,10 @@ async function handleWebEventTrigger(url) {
   try {
     const decoded = decodeURIComponent(eventInfo);
     const parsed = JSON.parse(decoded);
-    console.log('Received AgentBed event:', parsed);
+    logger.info('Received AgentBed event', parsed);
     await handleEvent(parsed);
   } catch (e) {
-    console.log('Failed to parse AgentBed event:', eventInfo, e);
+    logger.error('Failed to parse AgentBed event', { eventInfo, error: e.message });
   }
 
 }
@@ -1916,7 +1936,7 @@ async function handleWebEventTrigger(url) {
 app.on('second-instance', (event, argv) => {
   const urlArg = argv.find(arg => arg.startsWith('agentbed://'));
   if (urlArg) {
-    console.log('Second instance with protocol:', urlArg);
+    logger.info('Second instance with protocol', { url: urlArg });
     if (mainWindow) {
       handleWebEventTrigger(urlArg);
     }
@@ -1934,20 +1954,20 @@ app.whenReady().then(async () => {
 
   // Global Shortcuts
   globalShortcut.register('CommandOrControl+R', () => {
-    console.log('Ctrl+R is disabled');
+    logger.debug('Ctrl+R is disabled');
   });
 
   globalShortcut.register('F5', () => {
-    console.log('F5 is disabled');
-  });-
+    logger.debug('F5 is disabled');
+  });
 
   // Widget toggle shortcut (Ctrl + `)
   globalShortcut.register('CommandOrControl+`', () => {
-    console.log('Widget toggle shortcut pressed');
+    logger.debug('Widget toggle shortcut pressed');
     if (widgetWindow && !widgetWindow.isDestroyed()) {
       if (widgetWindow.isVisible()) {
         widgetWindow.hide();
-        console.log('Widget hidden');
+        logger.debug('Widget hidden');
       } else {
         widgetWindow.show();
         setTimeout(() => {
@@ -1958,20 +1978,29 @@ app.whenReady().then(async () => {
             widgetWindow.focus(); // Ensure focus
           }
         }, 100);
-        console.log('Widget shown');
+        logger.debug('Widget shown');
       }
     } else {
       // If widget window doesn't exist, create it
+      logger.debug('Widget window does not exist, creating new one');
       createWidgetWindow();
     }
   });
 
   // Initialize DB 
-  try{ initDb()}
-  catch (error) { console.error('Failed to initialize database:', error); }
+  try{ 
+    logger.info('Initializing database');
+    initDb();
+    logger.info('Database initialized successfully');
+  }
+  catch (error) { 
+    logger.error('Failed to initialize database', error); 
+  }
 
   // Load Store
+  logger.info('Loading application store');
   store = await loadStore();
+  logger.info('Application store loaded');
 
   // Auto Updater
     // autoUpdater.setFeedURL({
@@ -1985,6 +2014,7 @@ app.whenReady().then(async () => {
   
 
   // Create setup window first
+  logger.info('Creating initial setup window');
   createSetupWindow();
 
   // Register Protocol with the Windows
@@ -1994,13 +2024,14 @@ app.whenReady().then(async () => {
 
 app.on('will-quit' , async (event) => {
   event.preventDefault();
-  console.log("Quitting The Application !!!");
+  logger.info("Application quitting, cleaning up resources");
 
   // Set quitting flag
   app.isQuiting = true;
 
   // Clean up tray
   if (tray) {
+    logger.debug('Destroying tray');
     tray.destroy();
     tray = null;
   }
@@ -2008,23 +2039,26 @@ app.on('will-quit' , async (event) => {
   // Clean up setup window
   if (setupWindow && !setupWindow.isDestroyed()) {
     try {
+      logger.debug('Closing setup window during quit');
       setupWindow.close();
       setupWindow = null;
     } catch (error) {
-      console.error('Error closing setup window during quit:', error);
+      logger.error('Error closing setup window during quit', error);
     }
   }
 
   // Clean up widget window
   if (widgetWindow && !widgetWindow.isDestroyed()) {
     try {
+      logger.debug('Closing widget window during quit');
       widgetWindow.close();
       widgetWindow = null;
     } catch (error) {
-      console.error('Error closing widget window during quit:', error);
+      logger.error('Error closing widget window during quit', error);
     }
   }
 
+  logger.debug('Unregistering all global shortcuts');
   globalShortcut.unregisterAll();
   app.exit(0);
 });

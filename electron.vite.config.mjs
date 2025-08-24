@@ -2,6 +2,7 @@ import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import copyLoggerPlugin from './vite-plugin-copy-logger.js'
 
 
 export default defineConfig({
@@ -9,9 +10,12 @@ export default defineConfig({
     build: {
       lib: {
         entry: resolve(__dirname, 'main.js') // Explicitly define the entry point
+      },
+      rollupOptions: {
+        external: ['electron', 'electron-log', 'electron-store', 'dockerode', 'electron-differential-updater']
       }
     },
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin(), copyLoggerPlugin()]
   },
   preload: {
     build: {
