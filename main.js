@@ -110,7 +110,7 @@ function createSetupWindow() {
   } else {
     const setupPath = join(__dirname, '../renderer/index.html');
     console.log('Loading setup window from:', setupPath);
-    setupWindow.loadFile(setupPath);
+    setupWindow.loadFile(setupPath, { query: { setup: 'true' } });
   }
 
   setupWindow.setMenuBarVisibility(false);
@@ -400,7 +400,9 @@ function createWidgetWindow() {
       console.error('Failed to load widget URL:', error);
     });
   } else {
-    widgetWindow.window.loadFile(join(__dirname, '../widget/index.html')).catch((error) => {
+    const widgetPath = join(__dirname, '../renderer/index.html');
+    console.log('Loading widget window from:', widgetPath);
+    widgetWindow.window.loadFile(widgetPath, { query: { widget: 'true' } }).catch((error) => {
       console.error('Failed to load widget file:', error);
     });
   }
@@ -1942,7 +1944,7 @@ app.whenReady().then(async () => {
 
   globalShortcut.register('F5', () => {
     console.log('F5 is disabled');
-  });-
+  });
 
   // Widget toggle shortcut (Ctrl + `)
   globalShortcut.register('CommandOrControl+`', () => {
