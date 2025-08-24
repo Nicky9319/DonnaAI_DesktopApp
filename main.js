@@ -41,6 +41,8 @@ let mainWindow, store, widgetWindow, setupWindow, tray;
 let ipAddress = process.env.SERVER_IP_ADDRESS || '';
 let widgetUndetectabilityEnabled = true; // Enable undetectability for widget by default
 
+let inSetupPhase = true;
+
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 
@@ -697,6 +699,7 @@ ipcMain.handle('setup:continue', () => {
   console.log('Setup continue button pressed');
   // First create the main and widget windows
   console.log('Creating main and widget windows...');
+  inSetupPhase = false;
   createMainAndWidgetWindows();
 
   // Then destroy the setup window
@@ -1961,8 +1964,10 @@ app.whenReady().then(async () => {
         console.log('Widget shown');
       }
     } else {
+      if(!inSetupPhase){
       // If widget window doesn't exist, create it
-      createWidgetWindow();
+        createWidgetWindow();
+      }
     }
   });
 
