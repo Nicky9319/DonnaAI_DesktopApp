@@ -1110,12 +1110,20 @@ async function makeVolume(volume_name){
 }
 
 async function startContainer(container_object){
-  const containerInfo = await container_object.inspect();
-  if (containerInfo.State.Status !== 'running') {
+  try {
+    // First, try to start the container directly
     await container_object.start();
-    console.log('Container started');
-  } else {
-    console.log('Container is already running');
+    console.log('Container started successfully');
+  } catch (err) {
+    // Handle the specific case where container is already running
+    if (err.statusCode === 304 || err.message.includes('already started')) {
+      console.log('Container is already running (caught from start attempt)');
+      return;
+    }
+    
+    // For other errors, check if it's a different issue
+    console.error('Failed to start container:', err);
+    throw err;
   }
 }
 
@@ -1183,7 +1191,24 @@ async function pullImage(docker, imageName) {
 
 
 async function FinalizeAgent(){
-  docker = new Docker({ host: '127.0.0.1', port: 2375 });
+  // Check if Docker is available
+  try {
+    // Try to connect to Docker using default socket first, fallback to TCP
+    try {
+      docker = new Docker(); // Use default socket connection
+      // Test the connection
+      await docker.ping();
+      console.log('Docker connection successful via socket');
+    } catch (e) {
+      console.log('Socket connection failed, trying TCP...');
+      docker = new Docker({ host: '127.0.0.1', port: 2375 });
+      await docker.ping();
+      console.log('Docker connection successful via TCP');
+    }
+  } catch (error) {
+    console.error('Docker connection failed:', error.message);
+    throw new Error('Docker is not running or not accessible. Please install Docker Desktop and ensure it is running.');
+  }
 
   await pullImage(docker, "redis:7-alpine");
   await pullImage(docker, "postgres:15");
