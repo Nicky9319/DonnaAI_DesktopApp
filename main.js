@@ -1153,6 +1153,27 @@ async function getOrCreateContainer({ name, image, createOptions = {} }) {
   }
 }
 
+async function pullImage(docker, imageName) {
+  const stream = await docker.pull(imageName);
+  await new Promise((resolve, reject) => {
+    docker.modem.followProgress(
+      stream,
+      (err, output) => {
+        if (err) return reject(err);
+        resolve(output);
+      },
+      event => {
+        // This callback runs for every progress message
+        if (event.status && event.id) {
+          console.log(`${event.status} (${event.id})`);
+        } else if (event.status) {
+          console.log(event.status);
+        }
+      }
+    );
+  });
+}
+
 // Docker Related Functions Section END !!! ----------------------------------------------------------------------------------
 
 
@@ -1164,23 +1185,10 @@ async function getOrCreateContainer({ name, image, createOptions = {} }) {
 async function FinalizeAgent(){
   docker = new Docker({ host: '127.0.0.1', port: 2375 });
 
-  const images = await docker.listImages()
-  console.log(images)
-
-  const stream = await docker.pull("redis:7-alpine");
-  await new Promise((resolve, reject) => {
-    docker.modem.followProgress(stream, (err, output) => {
-      if (err) return reject(err);
-      resolve(output);
-    }, event => {
-      // This callback runs for every progress message
-      if (event.status && event.id) {
-        console.log(`${event.status} (${event.id})`);
-      } else if (event.status) {
-        console.log(event.status);
-      }
-    });
-  });
+  await pullImage(docker, "redis:7-alpine");
+  await pullImage(docker, "postgres:15");
+  await pullImage(docker, "chrislusf/seaweedfs:latest");
+  await pullImage(docker, "qdrant/qdrant:v1.7.0");
 
 
 
@@ -1190,26 +1198,13 @@ async function FinalizeAgent(){
   await makeNetworkBridge('donna');
 
 
+  // Create required volumes
+  await makeVolume('postgres_data');
+  await makeVolume('seaweedfs_data');
+  await makeVolume('qdrant_storage');
 
-  // Ensure th
-  // e named Docker volume "nginx_data" exists before using it
-  let nginxVolume;
-  try {
-    nginxVolume = await docker.getVolume('nginx_data').inspect();
-  } catch (e) {
-    // If the volume doesn't exist, create it
-    nginxVolume = await docker.createVolume({
-      Name: 'nginx_data'
-    });
-  }
-
-  await makeVolume('nginx_data');
-
-  // Try to get the existing container by name, or create it if it doesn't exist
-  
-
-  // Example usage:
-  const container = await getOrCreateContainer({
+  // Create or get the postgres container
+  const redisContainer = await getOrCreateContainer({
     name: "redis-test",
     image: "redis:7-alpine",
     createOptions: {
@@ -1227,15 +1222,100 @@ async function FinalizeAgent(){
     }
   });
 
+  const postgresContainer = await getOrCreateContainer({
+    name: "postgres-test",
+    image: "postgres:15",
+    createOptions: {
+      Tty: true,
+      Env: [
+        "POSTGRES_DB=donna",
+        "POSTGRES_USER=donna",
+        "POSTGRES_PASSWORD=harvey"
+      ],
+      ExposedPorts: {
+        "5432/tcp": {}
+      },
+      HostConfig: {
+        Binds: [
+          "postgres_data:/var/lib/postgresql/data"
+        ],
+        NetworkMode: "donna",
+        PortBindings: {
+          "5432/tcp": [{ HostPort: "5432" }]
+        },
+        RestartPolicy: {
+          Name: "unless-stopped"
+        }
+      }
+    }
+  });
+
+  // Create or get the seaweedfs container
+  const seaweedfsContainer = await getOrCreateContainer({
+    name: "seaweedfs-test",
+    image: "chrislusf/seaweedfs:latest",
+    createOptions: {
+      Tty: true,
+      Cmd: [
+        "server",
+        "-dir=/data",
+        "-ip=seaweedfs",
+        "-master.port=9333",
+        "-volume.port=8080",
+        "-filer.port=8888"
+      ],
+      ExposedPorts: {
+        "9333/tcp": {},
+        "8080/tcp": {},
+        "8888/tcp": {}
+      },
+      HostConfig: {
+        Binds: [
+          "seaweedfs_data:/data"
+        ],
+        NetworkMode: "donna",
+        PortBindings: {
+          "9333/tcp": [{ HostPort: "9333" }],
+          "8080/tcp": [{ HostPort: "8080" }],
+          "8888/tcp": [{ HostPort: "8888" }]
+        },
+        RestartPolicy: {
+          Name: "unless-stopped"
+        }
+      }
+    }
+  });
+
+  // Create or get the qdrant container
+  const qdrantContainer = await getOrCreateContainer({
+    name: "qdrant",
+    image: "qdrant/qdrant:v1.7.0",
+    createOptions: {
+      Tty: true,
+      ExposedPorts: {
+        "6333/tcp": {},
+        "6334/tcp": {}
+      },
+      HostConfig: {
+        Binds: [
+          "qdrant_storage:/qdrant/storage"
+        ],
+        NetworkMode: "donna",
+        PortBindings: {
+          "6333/tcp": [{ HostPort: "6333" }],
+          "6334/tcp": [{ HostPort: "6334" }]
+        }
+      }
+    }
+  });
+
+  // Start the containers if not already running
+  await startContainer(redisContainer);
+  await startContainer(postgresContainer);
+  await startContainer(seaweedfsContainer);
+  await startContainer(qdrantContainer);
 
   
-
-  // Start the container only if it is not already running
-  await startContainer(container);
-
-  // Optionally connect the container to the "donna" network explicitly (not needed if NetworkMode is set)
-  // await docker.getNetwork('donna').connect({ Container: container.id });
-
   return true
 }
 
