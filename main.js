@@ -150,6 +150,7 @@ class UndetectableWidgetWindow {
       skipTaskbar: this.undetectabilityEnabled, // Hide from taskbar when undetectable
       resizable: false,
       transparent: true,
+      focusable: false,
       hasShadow: false,
       show: false, // Don't show until ready
       fullscreen: true,
