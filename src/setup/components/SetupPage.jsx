@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const SetupPage = () => {
-  const [currentStep, setCurrentStep] = useState('checking'); // checking, installing, configuring, complete
+  const [currentStep, setCurrentStep] = useState('checking'); // checking, installing, configuring, finalizing, complete
   const [wslInstalled, setWslInstalled] = useState(false);
   const [needsRestart, setNeedsRestart] = useState(false);
   const [configComplete, setConfigComplete] = useState(false);
+  const [finalizingComplete, setFinalizingComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
   // Prevent duplicate execution
   const configurationInProgress = useRef(false);
+  const finalizingInProgress = useRef(false);
   const initialSetupCalled = useRef(false);
 
   // Color palette from ColorPallete.txt
@@ -109,7 +111,8 @@ const SetupPage = () => {
       
       if (result) {
         setConfigComplete(true);
-        setCurrentStep('complete');
+        setCurrentStep('finalizing');
+        await handleFinalizingAgent();
         console.log('WSL configuration completed successfully');
       } else {
         setError('WSL configuration failed. Please try again.');
@@ -120,6 +123,37 @@ const SetupPage = () => {
     } finally {
       setIsLoading(false);
       configurationInProgress.current = false;
+    }
+  };
+
+  const handleFinalizingAgent = async () => {
+    if (finalizingInProgress.current) {
+      console.log('Agent finalizing already in progress, skipping...');
+      return;
+    }
+    
+    finalizingInProgress.current = true;
+    setIsLoading(true);
+    setError('');
+    setCurrentStep('finalizing');
+    
+    try {
+      console.log('Starting agent finalization...');
+      const result = await window.electronAPI.finalizingAgent();
+      
+      if (result) {
+        setFinalizingComplete(true);
+        setCurrentStep('complete');
+        console.log('Agent finalization completed successfully');
+      } else {
+        setError('Agent finalization failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error finalizing agent:', error);
+      setError('Failed to finalize agent. Please try again.');
+    } finally {
+      setIsLoading(false);
+      finalizingInProgress.current = false;
     }
   };
 
@@ -319,6 +353,79 @@ const SetupPage = () => {
     </div>
   );
 
+  const renderFinalizingStep = () => (
+    <div className="space-y-6">
+      <div className="text-center space-y-4">
+        <h2 style={{ color: colors.primaryText }} className="text-2xl font-bold">
+          Finalizing Agent
+        </h2>
+        <p style={{ color: colors.secondaryText }} className="text-lg">
+          Setting up the agent environment and completing final configurations...
+        </p>
+      </div>
+
+      <div 
+        className="rounded-lg p-6 border"
+        style={{ 
+          backgroundColor: colors.surfaceBg, 
+          borderColor: colors.tertiaryBg 
+        }}
+      >
+        {isLoading ? (
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center space-x-3">
+              <div 
+                className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent"
+                style={{ borderColor: colors.primaryBlue, borderTopColor: 'transparent' }}
+              />
+              <p style={{ color: colors.secondaryText }} className="text-lg">
+                Finalizing agent setup...
+              </p>
+            </div>
+            <p style={{ color: colors.mutedText }} className="text-sm">
+              This may take a few moments. Please wait...
+            </p>
+          </div>
+        ) : finalizingComplete ? (
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center space-x-3">
+              <svg 
+                className="w-8 h-8" 
+                style={{ color: colors.successGreen }}
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <p style={{ color: colors.primaryText }} className="text-lg font-semibold">
+                Agent Finalization Complete!
+              </p>
+            </div>
+            <p style={{ color: colors.secondaryText }}>
+              The agent has been successfully finalized and is ready to use.
+            </p>
+          </div>
+        ) : (
+          <div className="text-center space-y-4">
+            <p style={{ color: colors.secondaryText }}>
+              Click the button below to finalize the agent setup.
+            </p>
+            <button
+              onClick={handleFinalizingAgent}
+              className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-80"
+              style={{ 
+                backgroundColor: colors.primaryBlue, 
+                color: colors.primaryText 
+              }}
+            >
+              Finalize Agent
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderCompleteStep = () => (
     <div className="space-y-6">
       <div className="text-center space-y-4">
@@ -363,6 +470,8 @@ const SetupPage = () => {
         return renderInstallationStep();
       case 'configuring':
         return renderConfigurationStep();
+      case 'finalizing':
+        return renderFinalizingStep();
       case 'complete':
         return renderCompleteStep();
       default:
@@ -399,13 +508,14 @@ const SetupPage = () => {
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            {['checking', 'installing', 'configuring', 'complete'].map((step, index) => {
+            {['checking', 'installing', 'configuring', 'finalizing', 'complete'].map((step, index) => {
               const isActive = currentStep === step;
               const isCompleted = 
                 (step === 'checking' && currentStep !== 'checking') ||
                 (step === 'installing' && wslInstalled) ||
                 (step === 'configuring' && configComplete) ||
-                (step === 'complete' && configComplete);
+                (step === 'finalizing' && finalizingComplete) ||
+                (step === 'complete' && finalizingComplete);
               
               return (
                 <div key={step} className="flex items-center">
@@ -423,9 +533,9 @@ const SetupPage = () => {
                   >
                     {isCompleted ? '✓' : index + 1}
                   </div>
-                  {index < 3 && (
+                  {index < 4 && (
                     <div 
-                      className="w-16 h-1 mx-2"
+                      className="w-12 h-1 mx-2"
                       style={{ 
                         backgroundColor: isCompleted ? colors.successGreen : colors.tertiaryBg 
                       }}

@@ -17,7 +17,7 @@ const {os} = require('os');
 const {url} = require('inspector');
 
 const Docker = require('dockerode');
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+let docker = null;
 
 // Import our custom logger
 const logger = require('./logger');
@@ -731,6 +731,18 @@ ipcMain.handle('setup:continue', () => {
   }
 });
 
+// Finalizing agent handler
+ipcMain.handle('finalizing-agent', async () => {
+  logger.info('Finalizing agent event triggered');
+  try {
+    const result = await FinalizeAgent();
+    return result;
+  } catch (error) {
+    logger.error('Error in finalizing agent', { error: error.message });
+    return false;
+  }
+});
+
 // Widget undetectability handlers
 ipcMain.handle('widget:toggleUndetectability', () => {
   if (widgetWindow) {
@@ -1071,9 +1083,163 @@ function createTray() {
 
 
 
+// Docker Related Functions Section !!! ----------------------------------------------------------------------------------
+
+async function makeNetworkBridge(bridge_name){
+  let network;
+  try {
+    network = await docker.getNetwork(bridge_name).inspect();
+  } catch (e) {
+    // If the network doesn't exist, create it
+    network = await docker.createNetwork({
+      Name: 'donna',
+      Driver: 'bridge'
+    });
+  } 
+}
+
+async function makeVolume(volume_name){
+  let volume;
+  try {
+    volume = await docker.getVolume(volume_name).inspect();
+  } catch (e) {
+    volume = await docker.createVolume({
+      Name: volume_name
+    });
+  }
+}
+
+async function startContainer(container_object){
+  const containerInfo = await container_object.inspect();
+  if (containerInfo.State.Status !== 'running') {
+    await container_object.start();
+    console.log('Container started');
+  } else {
+    console.log('Container is already running');
+  }
+}
+
+/**
+   * Get or create a Docker container by name and options.
+   * @param {object} params - Parameters for container creation and lookup.
+   * @param {string} params.name - The name of the container.
+   * @param {string} params.image - The image to use for the container.
+   * @param {object} [params.createOptions] - Additional options for container creation (Env, ExposedPorts, HostConfig, etc).
+   * @returns {Promise<object>} - The Dockerode container instance.
+   */
+async function getOrCreateContainer({ name, image, createOptions = {} }) {
+  let container;
+  try {
+    // Try to get the container by name
+    const containers = await docker.listContainers({ all: true, filters: { name: [name] } });
+    if (containers.length > 0) {
+      // Container exists, get its instance
+      container = docker.getContainer(containers[0].Id);
+      console.log(`Found existing container with ID: ${containers[0].Id}`);
+    } else {
+      // Container does not exist, create it
+      const options = {
+        Image: image,
+        name: name,
+        ...createOptions
+      };
+      container = await docker.createContainer(options);
+      console.log(`Created new container with ID: ${container.id}`);
+    }
+    return container;
+  } catch (err) {
+    console.error("Error getting or creating container:", err);
+    throw err;
+  }
+}
+
+// Docker Related Functions Section END !!! ----------------------------------------------------------------------------------
 
 
 
+// Finalizing Agent Section !!! ----------------------------------------------------------------------------------
+
+
+
+async function FinalizeAgent(){
+  docker = new Docker({ host: '127.0.0.1', port: 2375 });
+
+  const images = await docker.listImages()
+  console.log(images)
+
+  const stream = await docker.pull("redis:7-alpine");
+  await new Promise((resolve, reject) => {
+    docker.modem.followProgress(stream, (err, output) => {
+      if (err) return reject(err);
+      resolve(output);
+    }, event => {
+      // This callback runs for every progress message
+      if (event.status && event.id) {
+        console.log(`${event.status} (${event.id})`);
+      } else if (event.status) {
+        console.log(event.status);
+      }
+    });
+  });
+
+
+
+  
+  
+  // Ensure the custom bridge network "donna" exists before creating the container
+  await makeNetworkBridge('donna');
+
+
+
+  // Ensure th
+  // e named Docker volume "nginx_data" exists before using it
+  let nginxVolume;
+  try {
+    nginxVolume = await docker.getVolume('nginx_data').inspect();
+  } catch (e) {
+    // If the volume doesn't exist, create it
+    nginxVolume = await docker.createVolume({
+      Name: 'nginx_data'
+    });
+  }
+
+  await makeVolume('nginx_data');
+
+  // Try to get the existing container by name, or create it if it doesn't exist
+  
+
+  // Example usage:
+  const container = await getOrCreateContainer({
+    name: "redis-test",
+    image: "redis:7-alpine",
+    createOptions: {
+      Tty: true,
+      Env: ["MY_ENV=hello_world"],
+      ExposedPorts: {
+        "80/tcp": {}
+      },
+      HostConfig: {
+        Binds: [
+          "nginx_data:/usr/share/nginx/html"
+        ],
+        NetworkMode: "donna"
+      }
+    }
+  });
+
+
+  
+
+  // Start the container only if it is not already running
+  await startContainer(container);
+
+  // Optionally connect the container to the "donna" network explicitly (not needed if NetworkMode is set)
+  // await docker.getNetwork('donna').connect({ Container: container.id });
+
+  return true
+}
+
+// Finalizing Agent Section END !!! ----------------------------------------------------------------------------------
 
 
 

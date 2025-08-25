@@ -33,6 +33,7 @@ if (process.contextIsolated) {
       disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
       setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
       setupContinue: () => ipcRenderer.invoke('setup:continue'),
+      finalizingAgent: () => ipcRenderer.invoke('finalizing-agent'),
       // WSL Setup APIs
       checkWSL: () => ipcRenderer.invoke('checkWSL'),
       installWSL: () => ipcRenderer.invoke('installWSL'),
@@ -78,6 +79,7 @@ else{
     disableInteraction: () => ipcRenderer.invoke('window:disableInteraction'),
     setIgnoreMouseEvents: (ignore) => ipcRenderer.invoke('widget:setIgnoreMouseEvents', ignore),
     setupContinue: () => ipcRenderer.invoke('setup:continue'),
+    finalizingAgent: () => ipcRenderer.invoke('finalizing-agent'),
     // WSL Setup APIs
     checkWSL: () => ipcRenderer.invoke('checkWSL'),
     installWSL: () => ipcRenderer.invoke('installWSL'),
