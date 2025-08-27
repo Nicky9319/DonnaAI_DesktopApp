@@ -18,6 +18,11 @@ socket.on('disconnect', () => {
     console.log('Disconnected from server');
 });
 
+// Listen for 'msgFromDonnaDesktop' event and print the payload
+socket.on('msgFromDonnaDesktop', (payload) => {
+    console.log('Received msgFromDonnaDesktop event with payload:', payload);
+});
+
 async function triggerGetDonnaDesktop() {
     const response = await new Promise((resolve) => {
         socket.emit('getDonnaDesktop', null, (response) => {
