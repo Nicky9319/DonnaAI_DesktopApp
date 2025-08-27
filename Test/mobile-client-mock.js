@@ -36,7 +36,7 @@ function triggerSendMsgtoDonnaDesktop() {
     // You can customize the payload as needed
     const payload = {
         id: Date.now(),
-        text: "Hello from Donna Mobile",
+        text: "Inform Aarush I would be late tonight",
         sender: 'user',
         timestamp: new Date().toISOString()
       };

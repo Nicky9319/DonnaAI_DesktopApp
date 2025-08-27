@@ -57,20 +57,38 @@ const useEventRouter = () => {
 
     // Event handlers for different event types
     const eventHandlers = {
-        // Handle chat messages from widget
-        'msgForDonnaMobile': (payload) => {
+        // Handle chat messages from widget to send to Donna Mobile
+        'msgFromDonnaDesktop': (payload) => {
             console.log('[MainPage] msgForDonnaMobile received:', payload);
+            WebSocketManager.emit('sendMsgToDonnaMobile', payload);
+            console.log('[MainPage] msgForDonnaMobile sent to Donna Mobile');
+        },
+
+        // Default handler for unknown events
+        'default': (payload) => {
+            console.warn('[MainPage] Unknown event received:', payload);
         }
     };
 
     // Generic event handler that routes to specific handlers
     const handleEventFromWidget = (eventData) => {
-        const { eventName, payload } = eventData;
-        console.log('[MainPage] Event from widget received:', { eventName, payload });
+        try {
+            const { eventName, payload } = eventData;
+            console.log('[MainPage] Event from widget received:', { eventName, payload });
 
-        // Route to specific handler based on event name
-        const handler = eventHandlers[eventName] || eventHandlers.default;
-        handler(payload);
+            // Route to specific handler based on event name
+            const handler = eventHandlers[eventName] || eventHandlers.default;
+            
+            // Check if handler is a function before calling it
+            if (typeof handler === 'function') {
+                handler(payload);
+            } else {
+                console.error('[MainPage] Handler is not a function for event:', eventName);
+                console.log('[MainPage] Available handlers:', Object.keys(eventHandlers));
+            }
+        } catch (error) {
+            console.error('[MainPage] Error in handleEventFromWidget:', error);
+        }
     };
 
     return { handleEventFromWidget };
@@ -115,8 +133,14 @@ const MainPage = () => {
 
         // Set up IPC event listener for events from widget
         const handleEventFromWidgetIPC = (event, eventData) => {
-            console.log(eventData)
-            handleEventFromWidget(eventData);
+            console.log('[MainPage] IPC event received:', eventData);
+            
+            // Ensure eventData has the expected structure
+            if (eventData && typeof eventData === 'object' && eventData.eventName) {
+                handleEventFromWidget(eventData);
+            } else {
+                console.error('[MainPage] Invalid event data structure:', eventData);
+            }
         };
 
         // Add event listeners

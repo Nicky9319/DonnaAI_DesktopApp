@@ -239,12 +239,11 @@ const MainPage = () => {
       const processedMessage = ChatHistoryService.processSingleMessage(rawMessage);
       console.log('Adding processed message:', processedMessage);
       dispatch(addMessage(processedMessage));
-      sendEventToMain('msgFromDonnaDesktop', processedMessage);
     });
 
 
-    
-    
+    console.log(messages)
+    sendEventToMain('msgFromDonnaDesktop', messages);
     dispatch(setIsTyping(false));
   }
   
