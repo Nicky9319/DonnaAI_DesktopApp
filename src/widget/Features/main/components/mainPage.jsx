@@ -20,16 +20,27 @@ const useEventRouter = () => {
         // Handle messages from main window
         'msgFromDonnaMobile': (payload) => {
             console.log('[Widget] Message from Donna Mobile received via main window:', payload);
-            // Process the message and add to chat
-            console.log("Before processing message from mobile");
-            if (payload && payload.text) {
-              console.log("Processing message from mobile");
-                const processedMessage = ChatHistoryService.processSingleMessage({
-                    text: payload.text,
-                    sender: 'mobile',
-                    timestamp: payload.timestamp || new Date().toISOString()
-                });
-                dispatch(addMessage(processedMessage));
+
+            // The expected format is:
+            // {
+            //   id: <number>,
+            //   text: <string>,
+            //   sender: 'user',
+            //   timestamp: <string>
+            // }
+            const isValidFormat =
+                payload &&
+                typeof payload === 'object' &&
+                typeof payload.id === 'number' &&
+                typeof payload.text === 'string' &&
+                typeof payload.sender === 'string' &&
+                typeof payload.timestamp === 'string';
+
+            if (isValidFormat) {
+                console.log("Processing message from mobile (valid format)");
+                dispatch(addMessage(payload));
+            } else {
+                console.warn('[Widget] Message from Donna Mobile is not in the expected format:', payload);
             }
         },
     };

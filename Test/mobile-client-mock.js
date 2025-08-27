@@ -29,7 +29,12 @@ async function triggerGetDonnaDesktop() {
 
 function triggerSendMsgtoDonnaDesktop() {
     // You can customize the payload as needed
-    const payload = { message: "Hello from mobile client!" };
+    const payload = {
+        id: Date.now(),
+        text: "Hello from Donna Mobile",
+        sender: 'user',
+        timestamp: new Date().toISOString()
+      };
     socket.emit('sendMsgToDonnaDesktop', payload, (response) => {
         console.log('Received response from server:', response);
     });

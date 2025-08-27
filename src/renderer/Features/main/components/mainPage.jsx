@@ -38,13 +38,8 @@ const handleMsgFromDonnaMobile = (data) => {
         const messageData = typeof data === 'string' ? JSON.parse(data) : data;
         
         console.log('[MainPage] Parsed message data:', messageData);
+        sendEventToWidget('msgFromDonnaMobile', messageData);
         
-        // Add your custom handling logic here
-        // For now, just log the message
-        if (messageData.message) {
-            console.log('[MainPage] Message content:', messageData.message);
-            sendEventToWidget('msgFromDonnaMobile', messageData.message);
-        }
         
         // You can also emit this to the widget window if needed
         // window.electronAPI.sendToWidget('msgFromDonnaMobile', messageData);
