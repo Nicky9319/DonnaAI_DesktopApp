@@ -30,10 +30,9 @@ async function triggerGetDonnaDesktop() {
 function triggerSendMsgtoDonnaDesktop() {
     // You can customize the payload as needed
     const payload = { message: "Hello from mobile client!" };
-    let response = socket.emit('sendMsgtoDonnaDesktop', payload, (response) => {
+    socket.emit('sendMsgToDonnaDesktop', payload, (response) => {
         console.log('Received response from server:', response);
     });
-    console.log(response);
 }
 
 function waitForInput() {
