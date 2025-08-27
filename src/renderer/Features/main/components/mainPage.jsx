@@ -54,10 +54,100 @@ const handleMsgFromDonnaMobile = (data) => {
     }
 };
 
+// Generic Event Router for handling events from Widget
+const useEventRouter = () => {
+    console.log('[MainPage] useEventRouter');
+    const dispatch = useDispatch();
+
+    // Event handlers for different event types
+    const eventHandlers = {
+        // Handle chat messages from widget
+        'chatMessage': (payload) => {
+            console.log('[MainPage] Chat message from widget received:', payload);
+            // Add your chat message handling logic here
+            // For example: store in database, update UI, etc.
+        },
+
+        // Handle user actions from widget
+        'userAction': (payload) => {
+            console.log('[MainPage] User action from widget received:', payload);
+            // Add your user action handling logic here
+            // For example: trigger specific functions, update state, etc.
+        },
+
+        // Handle widget state changes
+        'widgetStateChange': (payload) => {
+            console.log('[MainPage] Widget state change received:', payload);
+            // Add your widget state handling logic here
+            // For example: sync state between windows, update UI, etc.
+        },
+
+        // Handle WebSocket events from widget
+        'websocketEvent': (payload) => {
+            console.log('[MainPage] WebSocket event from widget received:', payload);
+            // Add your WebSocket event handling logic here
+            // For example: forward to server, update connection state, etc.
+        },
+
+        // Handle notification requests from widget
+        'showNotification': (payload) => {
+            console.log('[MainPage] Show notification request from widget:', payload);
+            // Add your notification handling logic here
+            // For example: display system notification, update UI, etc.
+        },
+
+        // Handle data requests from widget
+        'requestData': (payload) => {
+            console.log('[MainPage] Data request from widget received:', payload);
+            // Add your data request handling logic here
+            // For example: fetch data from database, API, etc.
+        },
+
+        // Default handler for unknown events
+        'default': (payload) => {
+            console.log('[MainPage] Unknown event from widget received:', payload);
+        },
+
+        'testEvent': (payload) => {
+            console.log('[MainPage] Test event from widget received:', payload);
+        },
+    };
+
+    // Generic event handler that routes to specific handlers
+    const handleEventFromWidget = (eventData) => {
+        const { eventName, payload } = eventData;
+        console.log('[MainPage] Event from widget received:', { eventName, payload });
+
+        // Route to specific handler based on event name
+        const handler = eventHandlers[eventName] || eventHandlers.default;
+        handler(payload);
+    };
+
+    return { handleEventFromWidget };
+};
+
+// Function to send events to widget
+const sendEventToWidget = async (eventName, payload) => {
+    try {
+        if (window.electronAPI && window.electronAPI.sendToWidget) {
+            const result = await window.electronAPI.sendToWidget(eventName, payload);
+            console.log('[MainPage] Event sent to widget:', { eventName, payload, result });
+            return result;
+        } else {
+            console.warn('[MainPage] sendToWidget method not available');
+            return { success: false, error: 'sendToWidget method not available' };
+        }
+    } catch (error) {
+        console.error('[MainPage] Error sending event to widget:', error);
+        return { success: false, error: error.message };
+    }
+};
+
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
     const dispatch = useDispatch();
     const isConnectedToMobile = useSelector((state) => state.webSocket.isConnectedToMobile);
+    const { handleEventFromWidget } = useEventRouter();
 
     useEffect(() => {
         // WebSocketManager.connect();
@@ -73,10 +163,17 @@ const MainPage = () => {
             dispatch(handleMobileDisconnect(data));
         };
 
+        // Set up IPC event listener for events from widget
+        const handleEventFromWidgetIPC = (event, eventData) => {
+            console.log(eventData)
+            handleEventFromWidget(eventData);
+        };
+
         // Add event listeners
         if (window.electronAPI) {
             window.electronAPI.onDonnaMobileConnectRequest(handleMobileConnectRequestEvent);
             window.electronAPI.onDonnaMobileDisconnect(handleMobileDisconnectEvent);
+            window.electronAPI.onEventFromWidget(handleEventFromWidgetIPC);
         }
 
         // Cleanup function to remove listeners
@@ -84,9 +181,10 @@ const MainPage = () => {
             if (window.electronAPI) {
                 window.electronAPI.removeAllListeners('donna-mobile-connect-request');
                 window.electronAPI.removeAllListeners('donna-mobile-disconnect');
+                window.electronAPI.removeAllListeners('eventFromWidget');
             }
         };
-    }, [dispatch]);
+    }, [dispatch, handleEventFromWidget]);
 
     // Monitor isConnectedToMobile value changes
     useEffect(() => {
@@ -109,13 +207,51 @@ const MainPage = () => {
         };
     }, [isConnectedToMobile]);
 
-    
+    // Test function to demonstrate sending events to widget
+    const testSendEventToWidget = async () => {
+        const testPayload = {
+            message: "Hello from Main Window!",
+            timestamp: new Date().toISOString(),
+            type: "test"
+        };
+        
+        const result = await sendEventToWidget('testEvent', testPayload);
+        console.log('[MainPage] Test event result:', result);
+    };
+
     return (
         <div className="flex flex-col h-screen" style={{ backgroundColor: '#000000' }}>
             <Titlebar />
             <div className="flex flex-1 overflow-hidden">
                 <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
                 <MainContent activeTab={activeTab} />
+            </div>
+            
+            {/* Test button for IPC pipeline */}
+            <div style={{
+                position: 'fixed',
+                bottom: '10px',
+                right: '10px',
+                zIndex: 9999,
+                backgroundColor: '#333',
+                padding: '10px',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '12px'
+            }}>
+                <button 
+                    onClick={testSendEventToWidget}
+                    style={{
+                        padding: '5px 10px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Test IPC to Widget
+                </button>
             </div>
         </div>
     );

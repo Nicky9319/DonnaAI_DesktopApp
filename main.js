@@ -858,6 +858,122 @@ ipcMain.handle('restartSystem', async () => {
   }
 });
 
+// Generic IPC Communication Pipeline between Main and Widget Windows !!! ---------------------------------------------------------------------------------------------------
+
+/**
+ * Helper function to ensure widget window exists and is ready
+ * @returns {boolean} True if widget window is ready, false otherwise
+ */
+function ensureWidgetWindowExists() {
+  if (!widgetWindow) {
+    logger.info('Widget window does not exist, creating it...');
+    try {
+      createWidgetWindow();
+      // Give it a moment to initialize
+      setTimeout(() => {
+        logger.info('Widget window creation initiated');
+      }, 100);
+      return false;
+    } catch (error) {
+      logger.error('Error creating widget window:', error);
+      return false;
+    }
+  }
+  
+  if (widgetWindow.isDestroyed()) {
+    logger.info('Widget window is destroyed, recreating it...');
+    try {
+      recreateWidgetWindow();
+      // Give it a moment to initialize
+      setTimeout(() => {
+        logger.info('Widget window recreation initiated');
+      }, 100);
+      return false;
+    } catch (error) {
+      logger.error('Error recreating widget window:', error);
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Generic handler to send events from main window to widget window
+ * @param {string} eventName - The event name to send
+ * @param {any} payload - The data payload to send with the event
+ */
+ipcMain.handle('sendToWidget', async (event, eventName, payload) => {
+  try {
+    logger.info('Sending event to widget window', { eventName, payload });
+    
+    // Send the event directly to widget window
+    if (widgetWindow && widgetWindow.window && !widgetWindow.window.isDestroyed()) {
+      widgetWindow.window.webContents.send('eventFromMain', { eventName, payload });
+      logger.info('Event sent to widget window successfully');
+      return { success: true };
+    } else {
+      logger.warn('Widget window not available, event not sent');
+      return { success: false, error: 'Widget window not available' };
+    }
+  } catch (error) {
+    logger.error('Error sending event to widget window', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Generic handler to send events from widget window to main window
+ * @param {string} eventName - The event name to send
+ * @param {any} payload - The data payload to send with the event
+ */
+ipcMain.handle('sendToMain', async (event, eventName, payload) => {
+  try {
+    logger.info('Sending event to main window', { eventName, payload });
+    
+    // Just send the event directly to main window
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('eventFromWidget', { eventName, payload });
+      logger.info('Event sent to main window successfully');
+      return { success: true };
+    } else {
+      logger.warn('Main window not available, event not sent');
+      return { success: false, error: 'Main window not available' };
+    }
+  } catch (error) {
+    logger.error('Error sending event to main window', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Get the current status of both windows for debugging
+ */
+ipcMain.handle('getWindowStatus', async () => {
+  try {
+    const status = {
+      mainWindow: {
+        exists: !!mainWindow,
+        destroyed: mainWindow ? mainWindow.isDestroyed() : true,
+        visible: mainWindow ? !mainWindow.isHidden() : false
+      },
+      widgetWindow: {
+        exists: !!widgetWindow,
+        destroyed: widgetWindow ? widgetWindow.isDestroyed() : true,
+        visible: widgetWindow ? !widgetWindow.isHidden() : false
+      }
+    };
+    
+    logger.info('Window status requested', status);
+    return status;
+  } catch (error) {
+    logger.error('Error getting window status', error);
+    return { error: error.message };
+  }
+});
+
+// Generic IPC Communication Pipeline END !!! ---------------------------------------------------------------------------------------------------
+
 // IPC Handle Section END !!! ---------------------------------------------------------------------------------------------------
 
 

@@ -11,6 +11,115 @@ import ChatInterface from '../../chatInterface/ChatInterface'
 import webSocketManager from '../../../services/WebSocketManager';
 import ChatHistoryService from '../../chatInterface/utils/chatHistoryService';
 
+// Generic Event Router for handling events from Main Window
+const useEventRouter = () => {
+    const dispatch = useDispatch();
+
+    // Event handlers for different event types
+    const eventHandlers = {
+        // Handle messages from main window
+        'msgFromDonnaMobile': (payload) => {
+            console.log('[Widget] Message from Donna Mobile received via main window:', payload);
+            // Process the message and add to chat
+            if (payload && payload.text) {
+                const processedMessage = ChatHistoryService.processSingleMessage({
+                    text: payload.text,
+                    sender: 'mobile',
+                    timestamp: payload.timestamp || new Date().toISOString()
+                });
+                dispatch(addMessage(processedMessage));
+            }
+        },
+
+        // Handle chat messages from main window
+        'chatMessage': (payload) => {
+            console.log('[Widget] Chat message from main window received:', payload);
+            // Add your chat message handling logic here
+            // For example: add to chat interface, update UI, etc.
+        },
+
+        // Handle user actions from main window
+        'userAction': (payload) => {
+            console.log('[Widget] User action from main window received:', payload);
+            // Add your user action handling logic here
+            // For example: trigger specific functions, update state, etc.
+        },
+
+        // Handle main window state changes
+        'mainWindowStateChange': (payload) => {
+            console.log('[Widget] Main window state change received:', payload);
+            // Add your main window state handling logic here
+            // For example: sync state between windows, update UI, etc.
+        },
+
+        // Handle WebSocket events from main window
+        'websocketEvent': (payload) => {
+            console.log('[Widget] WebSocket event from main window received:', payload);
+            // Add your WebSocket event handling logic here
+            // For example: forward to local WebSocket, update connection state, etc.
+        },
+
+        // Handle notification requests from main window
+        'showNotification': (payload) => {
+            console.log('[Widget] Show notification request from main window:', payload);
+            // Add your notification handling logic here
+            // For example: display notification, update UI, etc.
+        },
+
+        // Handle data requests from main window
+        'requestData': (payload) => {
+            console.log('[Widget] Data request from main window received:', payload);
+            // Add your data request handling logic here
+            // For example: fetch data from local storage, API, etc.
+        },
+
+        // Handle test events
+        'testEvent': (payload) => {
+            console.log('[Widget] Test event from main window received:', payload);
+            // Send a response back to main window
+            // sendEventToMain('testResponse', {
+            //     message: "Hello from Widget!",
+            //     timestamp: new Date().toISOString(),
+            //     originalPayload: payload
+            // });
+        },
+
+        // Default handler for unknown events
+        'default': (payload) => {
+            console.log('[Widget] Unknown event from main window received:', payload);
+        }
+    };
+
+    // Generic event handler that routes to specific handlers
+    const handleEventFromMain = (eventData) => {
+        const { eventName, payload } = eventData;
+        console.log('[Widget] Event from main window received:', { eventName, payload });
+
+        // Route to specific handler based on event name
+        const handler = eventHandlers[eventName] || eventHandlers.default;
+        handler(payload);
+    };
+
+    return { handleEventFromMain };
+};
+
+// Function to send events to main window
+const sendEventToMain = async (eventName, payload) => {
+    try {
+        if (window.widgetAPI && window.widgetAPI.sendToMain) {
+            const result = await window.widgetAPI.sendToMain(eventName, payload);
+            console.log('[Widget] Event sent to main window:', { eventName, payload, result });
+            return result;
+        } else {
+            console.warn('[Widget] sendToMain method not available');
+            return { success: false, error: 'sendToMain method not available' };
+        }
+    } catch (error) {
+        console.error('[Widget] Error sending event to main window:', error);
+        return { success: false, error: error.message };
+    }
+};
+
 const MainPage = () => {
   const dispatch = useDispatch();
   const { floatingWidgetVisible, actionBarVisible, chatInterfaceVisible, allWidgetsVisible, messageCount } = useSelector(
@@ -18,6 +127,7 @@ const MainPage = () => {
   );
   const notificationCount = useSelector((state) => state.floatingWidget.notificationCount);
   const { messages } = useSelector((state) => state.chatState);
+  const { handleEventFromMain } = useEventRouter();
 
   // Use ref to track current visibility state for WebSocket handler
   const currentVisibilityRef = useRef({
@@ -53,6 +163,27 @@ const MainPage = () => {
 
     loadInitialChatHistory();
   }, []); // Empty dependency array - only run once on mount
+
+  // Set up IPC event listener for events from main window
+  useEffect(() => {
+    const handleEventFromMainIPC = (event, eventData) => {
+      handleEventFromMain(eventData);
+    };
+
+    // Add event listener
+    if (window.widgetAPI) {
+      window.widgetAPI.onEventFromMain(handleEventFromMainIPC);
+      console.log('[Widget] IPC event listener for main window events set up');
+    }
+
+    // Cleanup function to remove listener
+    return () => {
+      if (window.widgetAPI) {
+        window.widgetAPI.removeAllListeners('eventFromMain');
+        console.log('[Widget] IPC event listener for main window events removed');
+      }
+    };
+  }, [handleEventFromMain]);
 
   // Local state to handle smooth transitions
   const [localVisibility, setLocalVisibility] = useState({
@@ -166,6 +297,18 @@ const MainPage = () => {
     }
   },[dispatch])
 
+  // Test function to demonstrate sending events to main window
+  const testSendEventToMain = async () => {
+    const testPayload = {
+      message: "Hello from Widget Window!",
+      timestamp: new Date().toISOString(),
+      type: "test"
+    };
+    
+    const result = await sendEventToMain('testResponse', testPayload);
+    console.log('[Widget] Test event result:', result);
+  };
+
   return (
     <>
       {/* Test Controls for Notification Badge */}
@@ -215,6 +358,37 @@ const MainPage = () => {
           onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.mutedText}
         >
           Clear
+        </button>
+      </div>
+
+      {/* Test button for IPC pipeline */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        right: '10px',
+        zIndex: 9999,
+        backgroundColor: themeColors.modalBackground,
+        padding: '10px',
+        borderRadius: '8px',
+        color: themeColors.primaryText,
+        fontSize: '12px',
+        border: `1px solid ${themeColors.borderColor}`
+      }}>
+        <button 
+          onClick={testSendEventToMain}
+          style={{
+            padding: '5px 10px',
+            backgroundColor: themeColors.primaryBlue,
+            color: themeColors.primaryText,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.hoverBackground}
+          onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.primaryBlue}
+        >
+          Test IPC to Main
         </button>
       </div>
 

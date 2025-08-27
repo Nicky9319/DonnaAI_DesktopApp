@@ -44,6 +44,12 @@ if (process.contextIsolated) {
       onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
       onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
       removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+      // Generic IPC Communication Pipeline
+      sendToWidget: (eventName, payload) => ipcRenderer.invoke('sendToWidget', eventName, payload),
+      sendToMain: (eventName, payload) => ipcRenderer.invoke('sendToMain', eventName, payload),
+      getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
+      onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
+      onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {
@@ -63,6 +69,12 @@ if (process.contextIsolated) {
       onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
       onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
       removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+      // Generic IPC Communication Pipeline
+      sendToWidget: (eventName, payload) => ipcRenderer.invoke('sendToWidget', eventName, payload),
+      sendToMain: (eventName, payload) => ipcRenderer.invoke('sendToMain', eventName, payload),
+      getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
+      onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
+      onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
     });
 
   }
@@ -98,6 +110,12 @@ else{
     onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
     onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+    // Generic IPC Communication Pipeline
+    sendToWidget: (eventName, payload) => ipcRenderer.invoke('sendToWidget', eventName, payload),
+    sendToMain: (eventName, payload) => ipcRenderer.invoke('sendToMain', eventName, payload),
+    getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
+    onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
+    onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
   }
   window.widgetAPI = {
     closeWidget: () => ipcRenderer.invoke('widget:close'),
@@ -116,5 +134,11 @@ else{
     onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
     onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
     removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+    // Generic IPC Communication Pipeline
+    sendToWidget: (eventName, payload) => ipcRenderer.invoke('sendToWidget', eventName, payload),
+    sendToMain: (eventName, payload) => ipcRenderer.invoke('sendToMain', eventName, payload),
+    getWindowStatus: () => ipcRenderer.invoke('getWindowStatus'),
+    onEventFromWidget: (callback) => ipcRenderer.on('eventFromWidget', callback),
+    onEventFromMain: (callback) => ipcRenderer.on('eventFromMain', callback),
   }
 }
