@@ -38,6 +38,7 @@ const useEventRouter = () => {
 
             if (isValidFormat) {
                 console.log("Processing message from mobile (valid format)");
+                webSocketManager.emit('new-user-message', payload.text);
                 dispatch(addMessage(payload));
             } else {
                 console.warn('[Widget] Message from Donna Mobile is not in the expected format:', payload);
