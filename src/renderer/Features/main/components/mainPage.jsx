@@ -17,10 +17,16 @@ const MainContent = ({ activeTab }) => (
     </div>
 );
 
+function connectToServer(){
+    WebSocketManager.connect();
+}
+
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
     const dispatch = useDispatch();
     const isConnectedToMobile = useSelector((state) => state.webSocket.isConnectedToMobile);
+
+
 
     useEffect(() => {
         // WebSocketManager.connect();
@@ -54,6 +60,9 @@ const MainPage = () => {
     // Monitor isConnectedToMobile value changes
     useEffect(() => {
         console.log('[MainPage] isConnectedToMobile value changed:', isConnectedToMobile);
+        if (isConnectedToMobile) {
+            connectToServer();
+        }
     }, [isConnectedToMobile]);
 
     
