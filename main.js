@@ -32,6 +32,8 @@ dotenv.config();
 
 import { execSync } from 'child_process';
 
+import mqtt from 'mqtt';
+
 
 // Imports and modules END !!! ---------------------------------------------------------------------------------------------------
 
@@ -728,6 +730,7 @@ ipcMain.handle('setup:continue', () => {
     app.isQuiting = false; // Ensure we don't trigger app quit
     setupWindow.destroy(); // Use destroy() instead of close() to prevent the close event handler
     setupWindow = null;
+    logger.info("Setup window destroyed");
   }
 });
 
@@ -2156,10 +2159,54 @@ function executeWslCommand(command , distroName , username = "root" , needOutput
 
 
 
+// Config MQTT Section !!! ----------------------------------------------------------------------------------------------------------------
 
 
 
+function setupMQTT() {
+  const client = mqtt.connect("mqtt://57.159.24.214:1883", {
+    clientId: "electronApp1",
+    clean: true
+  })
 
+  client.on('connect', () => {
+    console.log("[MQTT] Connected to broker")
+
+    client.subscribe("desktop/donnaMobileConnectRequest", { qos: 1 }, (err) => {
+      if (!err) {
+        console.log("Subscribed to desktop/donnaMobileConnectRequest")
+      }
+      else {
+        console.error("[MQTT] Subscribe error:", err)
+      }
+    })
+
+    client.subscribe("desktop/donnaMobileDisconnect", { qos: 1 }, (err) => {
+      if (!err) {
+        console.log("Subscribed to desktop/donnaMobileDisconnect")
+      }
+      else {
+        console.error("[MQTT] Subscribe error:", err)
+      }
+    })
+  })
+
+  client.on('message', (topic, message) => {
+    const msg = message.toString()
+    console.log(`[MQTT] Event received on ${topic}: ${msg}`)
+  })
+
+  client.on('disconnect', () => {
+    console.log("[MQTT] Disconnected from broker")
+  })
+
+  client.on('error', (err) => {
+    console.error("[MQTT] Error:", err)
+  })
+}
+
+
+// Config MQTT Section END !!! ----------------------------------------------------------------------------------------------------------------
 
 
 
@@ -2223,6 +2270,8 @@ app.whenReady().then(async () => {
 
   // Initialize quitting flag
   app.isQuiting = false;
+  setupMQTT()
+  
 
   // Single Instance Check 
   const AppLock = app.requestSingleInstanceLock();

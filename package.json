@@ -29,6 +29,7 @@
     "electron-store": "^10.0.1",
     "firebase": "^11.7.3",
     "lowdb": "^7.0.1",
+    "mqtt": "^5.14.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.0",
     "socket.io-client": "^4.8.1",
