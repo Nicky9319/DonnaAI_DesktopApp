@@ -27,6 +27,7 @@ const chatStateSlice = createSlice({
   initialState,
   reducers: {
     addMessage(state, action) {
+      console.log('[ChatStateSlice] addMessage', action.payload);
       state.messages.push(action.payload);
     },
     setMessages(state, action) {

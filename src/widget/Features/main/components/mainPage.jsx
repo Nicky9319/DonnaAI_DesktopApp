@@ -21,7 +21,9 @@ const useEventRouter = () => {
         'msgFromDonnaMobile': (payload) => {
             console.log('[Widget] Message from Donna Mobile received via main window:', payload);
             // Process the message and add to chat
+            console.log("Before processing message from mobile");
             if (payload && payload.text) {
+              console.log("Processing message from mobile");
                 const processedMessage = ChatHistoryService.processSingleMessage({
                     text: payload.text,
                     sender: 'mobile',
@@ -30,64 +32,6 @@ const useEventRouter = () => {
                 dispatch(addMessage(processedMessage));
             }
         },
-
-        // Handle chat messages from main window
-        'chatMessage': (payload) => {
-            console.log('[Widget] Chat message from main window received:', payload);
-            // Add your chat message handling logic here
-            // For example: add to chat interface, update UI, etc.
-        },
-
-        // Handle user actions from main window
-        'userAction': (payload) => {
-            console.log('[Widget] User action from main window received:', payload);
-            // Add your user action handling logic here
-            // For example: trigger specific functions, update state, etc.
-        },
-
-        // Handle main window state changes
-        'mainWindowStateChange': (payload) => {
-            console.log('[Widget] Main window state change received:', payload);
-            // Add your main window state handling logic here
-            // For example: sync state between windows, update UI, etc.
-        },
-
-        // Handle WebSocket events from main window
-        'websocketEvent': (payload) => {
-            console.log('[Widget] WebSocket event from main window received:', payload);
-            // Add your WebSocket event handling logic here
-            // For example: forward to local WebSocket, update connection state, etc.
-        },
-
-        // Handle notification requests from main window
-        'showNotification': (payload) => {
-            console.log('[Widget] Show notification request from main window:', payload);
-            // Add your notification handling logic here
-            // For example: display notification, update UI, etc.
-        },
-
-        // Handle data requests from main window
-        'requestData': (payload) => {
-            console.log('[Widget] Data request from main window received:', payload);
-            // Add your data request handling logic here
-            // For example: fetch data from local storage, API, etc.
-        },
-
-        // Handle test events
-        'testEvent': (payload) => {
-            console.log('[Widget] Test event from main window received:', payload);
-            // Send a response back to main window
-            // sendEventToMain('testResponse', {
-            //     message: "Hello from Widget!",
-            //     timestamp: new Date().toISOString(),
-            //     originalPayload: payload
-            // });
-        },
-
-        // Default handler for unknown events
-        'default': (payload) => {
-            console.log('[Widget] Unknown event from main window received:', payload);
-        }
     };
 
     // Generic event handler that routes to specific handlers

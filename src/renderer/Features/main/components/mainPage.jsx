@@ -43,6 +43,7 @@ const handleMsgFromDonnaMobile = (data) => {
         // For now, just log the message
         if (messageData.message) {
             console.log('[MainPage] Message content:', messageData.message);
+            sendEventToWidget('msgFromDonnaMobile', messageData.message);
         }
         
         // You can also emit this to the widget window if needed
@@ -62,55 +63,9 @@ const useEventRouter = () => {
     // Event handlers for different event types
     const eventHandlers = {
         // Handle chat messages from widget
-        'chatMessage': (payload) => {
-            console.log('[MainPage] Chat message from widget received:', payload);
-            // Add your chat message handling logic here
-            // For example: store in database, update UI, etc.
-        },
-
-        // Handle user actions from widget
-        'userAction': (payload) => {
-            console.log('[MainPage] User action from widget received:', payload);
-            // Add your user action handling logic here
-            // For example: trigger specific functions, update state, etc.
-        },
-
-        // Handle widget state changes
-        'widgetStateChange': (payload) => {
-            console.log('[MainPage] Widget state change received:', payload);
-            // Add your widget state handling logic here
-            // For example: sync state between windows, update UI, etc.
-        },
-
-        // Handle WebSocket events from widget
-        'websocketEvent': (payload) => {
-            console.log('[MainPage] WebSocket event from widget received:', payload);
-            // Add your WebSocket event handling logic here
-            // For example: forward to server, update connection state, etc.
-        },
-
-        // Handle notification requests from widget
-        'showNotification': (payload) => {
-            console.log('[MainPage] Show notification request from widget:', payload);
-            // Add your notification handling logic here
-            // For example: display system notification, update UI, etc.
-        },
-
-        // Handle data requests from widget
-        'requestData': (payload) => {
-            console.log('[MainPage] Data request from widget received:', payload);
-            // Add your data request handling logic here
-            // For example: fetch data from database, API, etc.
-        },
-
-        // Default handler for unknown events
-        'default': (payload) => {
-            console.log('[MainPage] Unknown event from widget received:', payload);
-        },
-
-        'testEvent': (payload) => {
-            console.log('[MainPage] Test event from widget received:', payload);
-        },
+        'msgForDonnaMobile': (payload) => {
+            console.log('[MainPage] msgForDonnaMobile received:', payload);
+        }
     };
 
     // Generic event handler that routes to specific handlers
