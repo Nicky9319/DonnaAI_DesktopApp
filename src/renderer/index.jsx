@@ -2,6 +2,8 @@ import './Features/common/assets/main.css'
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Provider } from 'react-redux'
+import { store } from './store/store'
 import App from './App'
 
 // Check if this is a widget request or setup request
@@ -16,7 +18,9 @@ if (isWidget) {
   import('../widget/widget-main.jsx').then(({ default: WidgetApp }) => {
     createRoot(document.getElementById('root')).render(
       <StrictMode>
-        <WidgetApp />
+        <Provider store={store}>
+          <WidgetApp />
+        </Provider>
       </StrictMode>
     )
   });
@@ -25,7 +29,9 @@ if (isWidget) {
   import('../setup/components/SetupPage.jsx').then(({ default: SetupPage }) => {
     createRoot(document.getElementById('root')).render(
       <StrictMode>
-        <SetupPage />
+        <Provider store={store}>
+          <SetupPage />
+        </Provider>
       </StrictMode>
     )
   });
@@ -33,7 +39,9 @@ if (isWidget) {
   // Load main app
   createRoot(document.getElementById('root')).render(
     <StrictMode>
-      <App />
+      <Provider store={store}>
+        <App />
+      </Provider>
     </StrictMode>
   )
 }

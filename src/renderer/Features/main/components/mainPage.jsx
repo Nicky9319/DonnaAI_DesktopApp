@@ -1,4 +1,6 @@
 import React, { useState, useEffect  } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { handleMobileConnectRequest, handleMobileDisconnect } from '../../../store/slices/webSocketSlice';
 import Titlebar from '../../common/components/Titlebar/Titlebar';
 import Sidebar from '../../common/components/Sidebar/Sidebar';
 import HomePage from '../../home/components/HomePage';
@@ -17,25 +19,27 @@ const MainContent = ({ activeTab }) => (
 
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
+    const dispatch = useDispatch();
+    const isConnectedToMobile = useSelector((state) => state.webSocket.isConnectedToMobile);
 
     useEffect(() => {
         // WebSocketManager.connect();
         
         // Set up MQTT event listeners
-        const handleMobileConnectRequest = (event, data) => {
+        const handleMobileConnectRequestEvent = (event, data) => {
             console.log('[MQTT] Mobile connect request received:', data);
-            // TODO: Handle mobile connection request
+            dispatch(handleMobileConnectRequest(data));
         };
 
-        const handleMobileDisconnect = (event, data) => {
+        const handleMobileDisconnectEvent = (event, data) => {
             console.log('[MQTT] Mobile disconnect received:', data);
-            // TODO: Handle mobile disconnection
+            dispatch(handleMobileDisconnect(data));
         };
 
         // Add event listeners
         if (window.electronAPI) {
-            window.electronAPI.onDonnaMobileConnectRequest(handleMobileConnectRequest);
-            window.electronAPI.onDonnaMobileDisconnect(handleMobileDisconnect);
+            window.electronAPI.onDonnaMobileConnectRequest(handleMobileConnectRequestEvent);
+            window.electronAPI.onDonnaMobileDisconnect(handleMobileDisconnectEvent);
         }
 
         // Cleanup function to remove listeners
@@ -45,7 +49,13 @@ const MainPage = () => {
                 window.electronAPI.removeAllListeners('donna-mobile-disconnect');
             }
         };
-    }, []);
+    }, [dispatch]);
+
+    // Monitor isConnectedToMobile value changes
+    useEffect(() => {
+        console.log('[MainPage] isConnectedToMobile value changed:', isConnectedToMobile);
+    }, [isConnectedToMobile]);
+
     
     return (
         <div className="flex flex-col h-screen" style={{ backgroundColor: '#000000' }}>
