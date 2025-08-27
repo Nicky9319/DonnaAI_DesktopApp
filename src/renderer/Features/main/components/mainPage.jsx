@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
 import Titlebar from '../../common/components/Titlebar/Titlebar';
 import Sidebar from '../../common/components/Sidebar/Sidebar';
 import HomePage from '../../home/components/HomePage';
 import ActiveTasksPage from '../../tasks/components/ActiveTasksPage';
 import ComingSoonPage from '../../settings/components/ComingSoonPage';
+import WebSocketManager from '../../../services/WebSocketManager';
 
 // MainContent Component
 const MainContent = ({ activeTab }) => (
@@ -16,6 +17,10 @@ const MainContent = ({ activeTab }) => (
 
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
+
+    useEffect(() => {
+        WebSocketManager.connect();
+    }, []);
     
     return (
         <div className="flex flex-col h-screen" style={{ backgroundColor: '#000000' }}>
