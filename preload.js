@@ -40,6 +40,10 @@ if (process.contextIsolated) {
       checkWslConfigDone: () => ipcRenderer.invoke('checkWslConfigDone'),
       configureWslDistro: () => ipcRenderer.invoke('configureWslDistro'),
       restartSystem: () => ipcRenderer.invoke('restartSystem'),
+      // MQTT Event Listeners
+      onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
+      onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
+      removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
     });
 
     contextBridge.exposeInMainWorld('widgetAPI', {
@@ -55,6 +59,10 @@ if (process.contextIsolated) {
       toggleUndetectability: () => ipcRenderer.invoke('widget:toggleUndetectability'),
       setContentProtection: (enabled) => ipcRenderer.invoke('widget:setContentProtection', enabled),
       getUndetectabilityState: () => ipcRenderer.invoke('widget:getUndetectabilityState'),
+      // MQTT Event Listeners
+      onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
+      onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
+      removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
     });
 
   }
@@ -86,6 +94,10 @@ else{
     checkWslConfigDone: () => ipcRenderer.invoke('checkWslConfigDone'),
     configureWslDistro: () => ipcRenderer.invoke('configureWslDistro'),
     restartSystem: () => ipcRenderer.invoke('restartSystem'),
+    // MQTT Event Listeners
+    onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
+    onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
+    removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
   }
   window.widgetAPI = {
     closeWidget: () => ipcRenderer.invoke('widget:close'),
@@ -100,5 +112,9 @@ else{
     toggleUndetectability: () => ipcRenderer.invoke('widget:toggleUndetectability'),
     setContentProtection: (enabled) => ipcRenderer.invoke('widget:setContentProtection', enabled),
     getUndetectabilityState: () => ipcRenderer.invoke('widget:getUndetectabilityState'),
+    // MQTT Event Listeners
+    onDonnaMobileConnectRequest: (callback) => ipcRenderer.on('donna-mobile-connect-request', callback),
+    onDonnaMobileDisconnect: (callback) => ipcRenderer.on('donna-mobile-disconnect', callback),
+    removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
   }
 }

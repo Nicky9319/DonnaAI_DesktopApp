@@ -19,7 +19,32 @@ const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
 
     useEffect(() => {
-        WebSocketManager.connect();
+        // WebSocketManager.connect();
+        
+        // Set up MQTT event listeners
+        const handleMobileConnectRequest = (event, data) => {
+            console.log('[MQTT] Mobile connect request received:', data);
+            // TODO: Handle mobile connection request
+        };
+
+        const handleMobileDisconnect = (event, data) => {
+            console.log('[MQTT] Mobile disconnect received:', data);
+            // TODO: Handle mobile disconnection
+        };
+
+        // Add event listeners
+        if (window.electronAPI) {
+            window.electronAPI.onDonnaMobileConnectRequest(handleMobileConnectRequest);
+            window.electronAPI.onDonnaMobileDisconnect(handleMobileDisconnect);
+        }
+
+        // Cleanup function to remove listeners
+        return () => {
+            if (window.electronAPI) {
+                window.electronAPI.removeAllListeners('donna-mobile-connect-request');
+                window.electronAPI.removeAllListeners('donna-mobile-disconnect');
+            }
+        };
     }, []);
     
     return (

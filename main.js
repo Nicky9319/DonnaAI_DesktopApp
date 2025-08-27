@@ -2194,6 +2194,20 @@ function setupMQTT() {
   client.on('message', (topic, message) => {
     const msg = message.toString()
     console.log(`[MQTT] Event received on ${topic}: ${msg}`)
+
+    if (topic == "desktop/donnaMobileConnectRequest") {
+      // Send event to renderer process
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("donna-mobile-connect-request", { topic, message: msg })
+      }
+    }
+    else if (topic == "desktop/donnaMobileDisconnect") {
+      // Send event to renderer process
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("donna-mobile-disconnect", { topic, message: msg })
+      }
+    }
+    
   })
 
   client.on('disconnect', () => {
