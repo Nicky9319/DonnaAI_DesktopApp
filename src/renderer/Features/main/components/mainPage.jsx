@@ -21,12 +21,43 @@ function connectToServer(){
     WebSocketManager.connect();
 }
 
+// Function to handle messages from Donna Mobile
+const handleMsgFromDonnaMobile = (data) => {
+    console.log('[MainPage] Message from Donna Mobile received:', data);
+    
+    // Handle the message data here
+    // You can add your custom logic to process the message
+    // For example:
+    // - Display notification
+    // - Update UI state
+    // - Forward to widget window
+    // - Store in database
+    
+    try {
+        // Example: Parse the message data
+        const messageData = typeof data === 'string' ? JSON.parse(data) : data;
+        
+        console.log('[MainPage] Parsed message data:', messageData);
+        
+        // Add your custom handling logic here
+        // For now, just log the message
+        if (messageData.message) {
+            console.log('[MainPage] Message content:', messageData.message);
+        }
+        
+        // You can also emit this to the widget window if needed
+        // window.electronAPI.sendToWidget('msgFromDonnaMobile', messageData);
+        
+    } catch (error) {
+        console.error('[MainPage] Error processing message from Donna Mobile:', error);
+        console.log('[MainPage] Raw message data:', data);
+    }
+};
+
 const MainPage = () => {
     const [activeTab, setActiveTab] = useState('home');
     const dispatch = useDispatch();
     const isConnectedToMobile = useSelector((state) => state.webSocket.isConnectedToMobile);
-
-
 
     useEffect(() => {
         // WebSocketManager.connect();
@@ -62,7 +93,20 @@ const MainPage = () => {
         console.log('[MainPage] isConnectedToMobile value changed:', isConnectedToMobile);
         if (isConnectedToMobile) {
             connectToServer();
+            
+            // Set up WebSocket event listener for msgFromDonnaMobile
+            WebSocketManager.on('msgFromDonnaMobile', handleMsgFromDonnaMobile);
+            
+            console.log('[MainPage] WebSocket event listener for msgFromDonnaMobile set up');
         }
+
+        // Cleanup function to remove WebSocket event listener
+        return () => {
+            if (isConnectedToMobile) {
+                WebSocketManager.off('msgFromDonnaMobile', handleMsgFromDonnaMobile);
+                console.log('[MainPage] WebSocket event listener for msgFromDonnaMobile removed');
+            }
+        };
     }, [isConnectedToMobile]);
 
     
