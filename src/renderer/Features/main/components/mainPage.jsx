@@ -18,7 +18,7 @@ const MainContent = ({ activeTab }) => (
 );
 
 function connectToServer(){
-    WebSocketManager.connect();
+    return WebSocketManager.connect();
 }
 
 // Function to handle messages from Donna Mobile
@@ -164,8 +164,15 @@ const MainPage = () => {
     useEffect(() => {
         console.log('[MainPage] isConnectedToMobile value changed:', isConnectedToMobile);
         if (isConnectedToMobile) {
-            connectToServer();
-            
+            connectToServer().then(() => {
+                            console.log('Donna Desktop Application Connected to Donna Mobile');
+
+            WebSocketManager.emit("pingFromDonnaDesktop", (response) => {
+                console.log("[MainPage] Response to pingFromDonnaDesktop:", response);
+            });
+            })
+
+
             // Set up WebSocket event listener for msgFromDonnaMobile
             WebSocketManager.on('msgFromDonnaMobile', handleMsgFromDonnaMobile);
             
