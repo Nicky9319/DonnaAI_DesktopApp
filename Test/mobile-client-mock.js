@@ -23,7 +23,7 @@ socket.on('pingFromDonnaDesktop', () => {
 });
 
 socket.on('conversationWithDonna', (payload) => {
-    console.log('Received conversationWithDonna event with payload:', payload);
+    console.log('Received conversation With Donna event with payload:', payload);
 });
 
 // Listen for 'msgFromDonnaDesktop' event and print the payload
@@ -34,7 +34,7 @@ socket.on('msgFromDonnaDesktop', (payload) => {
 // New function to trigger 'getConversationWithDonna'
 async function triggerGetConversationWithDonna() {
     const response = await new Promise((resolve) => {
-        socket.emit('getConversationWithDonna', null, (response) => {
+        socket.emit('getConversationWithDonna', (response) => {
             resolve(response);
         });
     });

@@ -44,16 +44,69 @@ const useEventRouter = () => {
                 console.warn('[Widget] Message from Donna Mobile is not in the expected format:', payload);
             }
         },
+
+        // Flow: Main Window -> Widget -> API -> Main Window -> Mobile App
+        'getConversationWithDonna': async (payload) => {
+            console.log('[Widget] getConversationWithDonna EventTriggered received:', payload);
+            
+            try {
+                // Make API call to get chat history
+                console.log('[Widget] Fetching chat history from API...');
+                const chatHistory = await ChatHistoryService.loadChatHistory();
+                
+                console.log('[Widget] Chat history loaded successfully:', chatHistory);
+                
+                // Send the conversation data to main window
+                const result = await sendEventToMain('conversationWithDonna', chatHistory);
+                
+                if (result.success) {
+                    console.log('[Widget] conversationWithDonna event sent to main window successfully');
+                } else {
+                    console.error('[Widget] Failed to send conversationWithDonna to main window:', result.error);
+                }
+                
+            } catch (error) {
+                console.error('[Widget] Error in getConversationWithDonna handler:', error);
+                
+                // Send error response to main window
+                const errorPayload = {
+                    error: true,
+                    message: 'Failed to load chat history',
+                    details: error.message
+                };
+                
+                await sendEventToMain('conversationWithDonna', errorPayload);
+            }
+        },
+
+        'conversationWithDonna': (payload) => {
+            console.log('[Widget] conversationWithDonna received:', payload);
+            webSocketManager.emit('conversationWithDonna', payload);
+            console.log('[Widget] conversationWithDonna sent to Donna Mobile');
+        },
+
+        // Default handler for unknown events
+        'default': (payload) => {
+            console.warn('[Widget] Unknown event received:', payload);
+        }
     };
 
     // Generic event handler that routes to specific handlers
-    const handleEventFromMain = (eventData) => {
+    const handleEventFromMain = async (eventData) => {
         const { eventName, payload } = eventData;
         console.log('[Widget] Event from main window received:', { eventName, payload });
 
         // Route to specific handler based on event name
         const handler = eventHandlers[eventName] || eventHandlers.default;
-        handler(payload);
+        
+        try {
+            // Handle both async and sync handlers
+            const result = await handler(payload);
+            return result;
+        } catch (error) {
+            console.error('[Widget] Error in event handler:', { eventName, error });
+            throw error;
+        }
     };
 
     return { handleEventFromMain };
@@ -122,8 +175,12 @@ const MainPage = () => {
 
   // Set up IPC event listener for events from main window
   useEffect(() => {
-    const handleEventFromMainIPC = (event, eventData) => {
-      handleEventFromMain(eventData);
+    const handleEventFromMainIPC = async (event, eventData) => {
+      try {
+        await handleEventFromMain(eventData);
+      } catch (error) {
+        console.error('[Widget] Error handling IPC event:', error);
+      }
     };
 
     // Add event listener

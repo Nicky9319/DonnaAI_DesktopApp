@@ -64,6 +64,12 @@ const useEventRouter = () => {
             console.log('[MainPage] msgForDonnaMobile sent to Donna Mobile');
         },
 
+        'conversationWithDonna': (payload) => {
+            console.log('[MainPage] conversationWithDonna received:', payload);
+            WebSocketManager.emit('conversationWithDonna', payload);
+            console.log('[MainPage] conversationWithDonna sent to Donna Mobile');
+        },
+
         // Default handler for unknown events
         'default': (payload) => {
             console.warn('[MainPage] Unknown event received:', payload);
@@ -109,6 +115,10 @@ const sendEventToWidget = async (eventName, payload) => {
         console.error('[MainPage] Error sending event to widget:', error);
         return { success: false, error: error.message };
     }
+};
+
+const handleGetConversationWithDonna = () => {
+    sendEventToWidget('getConversationWithDonna', null);
 };
 
 const MainPage = () => {
@@ -175,7 +185,8 @@ const MainPage = () => {
 
             // Set up WebSocket event listener for msgFromDonnaMobile
             WebSocketManager.on('msgFromDonnaMobile', handleMsgFromDonnaMobile);
-            
+            WebSocketManager.on('getConversationWithDonna', handleGetConversationWithDonna);
+
             console.log('[MainPage] WebSocket event listener for msgFromDonnaMobile set up');
         }
 
