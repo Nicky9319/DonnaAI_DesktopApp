@@ -22,11 +22,24 @@ socket.on('pingFromDonnaDesktop', () => {
     console.log('Donna Desktop is live');
 });
 
+socket.on('conversationWithDonna', (payload) => {
+    console.log('Received conversationWithDonna event with payload:', payload);
+});
 
 // Listen for 'msgFromDonnaDesktop' event and print the payload
 socket.on('msgFromDonnaDesktop', (payload) => {
     console.log('Received msgFromDonnaDesktop event with payload:', payload);
 });
+
+// New function to trigger 'getConversationWithDonna'
+async function triggerGetConversationWithDonna() {
+    const response = await new Promise((resolve) => {
+        socket.emit('getConversationWithDonna', null, (response) => {
+            resolve(response);
+        });
+    });
+    console.log('Received response from server:', response);
+}
 
 async function triggerGetDonnaDesktop() {
     const response = await new Promise((resolve) => {
@@ -59,6 +72,7 @@ function waitForInput() {
     console.log('\nType a command and press Enter:');
     console.log('1 - Trigger getDonnaDesktop');
     console.log('2 - Trigger sendMsgtoDonnaDesktop');
+    console.log('3 - Trigger getConversationWithDonna');
     console.log('exit - Quit\n');
 
     rl.on('line', (input) => {
@@ -66,12 +80,14 @@ function waitForInput() {
             triggerGetDonnaDesktop();
         } else if (input.trim() === '2') {
             triggerSendMsgtoDonnaDesktop();
+        } else if (input.trim() === '3') {
+            triggerGetConversationWithDonna();
         } else if (input.trim().toLowerCase() === 'exit') {
             rl.close();
             socket.disconnect();
             process.exit(0);
         } else {
-            console.log('Unknown command. Please enter 1, 2, or exit.');
+            console.log('Unknown command. Please enter 1, 2, 3, or exit.');
         }
         if (rl.listenerCount('line') > 0) {
             // Only prompt again if not exiting
