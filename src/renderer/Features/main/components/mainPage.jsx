@@ -189,11 +189,15 @@ const MainPage = () => {
 
             console.log('[MainPage] WebSocket event listener for msgFromDonnaMobile set up');
         }
+        else{
+            WebSocketManager.disconnect();
+        }
 
         // Cleanup function to remove WebSocket event listener
         return () => {
             if (isConnectedToMobile) {
                 WebSocketManager.off('msgFromDonnaMobile', handleMsgFromDonnaMobile);
+                WebSocketManager.disconnect();
                 console.log('[MainPage] WebSocket event listener for msgFromDonnaMobile removed');
             }
         };
