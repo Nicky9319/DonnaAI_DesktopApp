@@ -17,6 +17,23 @@ import ChatHistoryService from './utils/chatHistoryService';
 // Import WebSocket manager
 import webSocketManager from '../../services/WebSocketManager';
 
+
+const sendEventToMain = async (eventName, payload) => {
+  try {
+      if (window.widgetAPI && window.widgetAPI.sendToMain) {
+          const result = await window.widgetAPI.sendToMain(eventName, payload);
+          console.log('[Widget] Event sent to main window:', { eventName, payload, result });
+          return result;
+      } else {
+          console.warn('[Widget] sendToMain method not available');
+          return { success: false, error: 'sendToMain method not available' };
+      }
+  } catch (error) {
+      console.error('[Widget] Error sending event to main window:', error);
+      return { success: false, error: error.message };
+  }
+};
+
 const ChatInterface = () => {
   const dispatch = useDispatch();
   
@@ -183,11 +200,13 @@ const ChatInterface = () => {
         timestamp: new Date().toISOString()
       };
 
+      sendEventToMain('msgFromDonnaDesktop', [newMessage]);
       dispatch(addMessage(newMessage));
       setInputValue('');
       
       // Emit new-user-message event via WebSocket
       webSocketManager.emit('new-user-message', inputValue.trim());
+
       
       // Set isTyping to true
       dispatch(setIsTyping(true));
