@@ -1,18 +1,49 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Agentbed</title>
-    <!-- <link rel="stylesheet" href="../assets/styles.css" /> -->
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-    />
-  </head>
+<head>
+  <title>Electron CDP Proxy</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #mirror { width: 100%; height: 100%; overflow: auto; }
+  </style>
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+</head>
+<body>
+  <div id="mirror" tabindex="0"></div>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="index.jsx"></script>
-  </body>
+  <script>
+    const { ipcRenderer } = require("electron");
+    const mirror = document.getElementById("mirror");
+
+    // Capture mouse events
+    mirror.addEventListener("mousedown", e => {
+      ipcRenderer.send("input-event", { type: "mouse", action: "down", x: e.clientX, y: e.clientY });
+    });
+
+    mirror.addEventListener("mouseup", e => {
+      ipcRenderer.send("input-event", { type: "mouse", action: "up", x: e.clientX, y: e.clientY });
+    });
+
+    mirror.addEventListener("mousemove", e => {
+      ipcRenderer.send("input-event", { type: "mouse", action: "move", x: e.clientX, y: e.clientY });
+    });
+
+    // Capture keyboard events (ensure mirror div is focused)
+    mirror.addEventListener("keydown", e => {
+      ipcRenderer.send("input-event", { type: "keyboard", action: "keydown", key: e.key });
+    });
+
+    mirror.addEventListener("keyup", e => {
+      ipcRenderer.send("input-event", { type: "keyboard", action: "keyup", key: e.key });
+    });
+
+    // Receive DOM updates from CDP
+    ipcRenderer.on("dom-update", (event, html) => {
+      mirror.innerHTML = html;
+    });
+
+    // Focus the mirror div to capture keyboard
+    mirror.focus();
+  </script>
+</body>
 </html>

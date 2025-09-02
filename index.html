@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Electron DOM Mirror</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #mirror { width: 100%; height: 100%; overflow: auto; }
+  </style>
+</head>
+<body>
+  <div id="mirror"></div>
+  <script>
+    const { ipcRenderer } = require("electron");
+
+    // Update DOM mirror
+    window.electronHTML = "";
+    ipcRenderer.on("dom-update", (event, html) => {
+      document.getElementById("mirror").innerHTML = html;
+    });
+
+    // Relay mouse events
+    document.addEventListener("mousedown", e => {
+      ipcRenderer.send("input-event", { type: "mouse", action: "down", x: e.clientX, y: e.clientY });
+    });
+    document.addEventListener("mouseup", e => {
+      ipcRenderer.send("input-event", { type: "mouse", action: "up", x: e.clientX, y: e.clientY });
+    });
+    document.addEventListener("mousemove", e => {
+      ipcRenderer.send("input-event", { type: "mouse", action: "move", x: e.clientX, y: e.clientY });
+    });
+
+    // Relay keyboard events
+    document.addEventListener("keydown", e => {
+      ipcRenderer.send("input-event", { type: "keyboard", action: "down", key: e.key });
+    });
+    document.addEventListener("keyup", e => {
+      ipcRenderer.send("input-event", { type: "keyboard", action: "up", key: e.key });
+    });
+  </script>
+</body>
+</html>
