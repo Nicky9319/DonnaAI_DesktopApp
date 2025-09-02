@@ -27,6 +27,7 @@
     "electron-store": "^10.0.1",
     "firebase": "^11.7.3",
     "lowdb": "^7.0.1",
+    "mqtt": "^5.14.0",
     "react-router-dom": "^7.6.0",
     "tailwindcss": "^4.1.7"
   },

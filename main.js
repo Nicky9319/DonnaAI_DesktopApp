@@ -1,9 +1,11 @@
 // Imports and modules !!! ---------------------------------------------------------------------------------------------------
 
-import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, globalShortcut, contextBridge, Notification } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from './resources/icon.png?asset'
+
+const mqtt = require('mqtt')
 
 const {spawn, exec} = require('child_process');
 const fs = require('fs');
@@ -677,6 +679,46 @@ function executeWslCommand(command , distroName , username = "root" , needOutput
 
 
 
+// Config MQTT Section !!! ----------------------------------------------------------------------------------------------------------------
+
+
+function setupMQTT() {
+  const client = mqtt.connect("mqtt://57.159.24.214:1883", {
+    clientId: "electronApp1",
+    clean: true
+  })
+
+  client.on('connect', () => {
+    console.log("[MQTT] Connected to broker")
+    client.subscribe("desktop/events", { qos: 1 }, (err) => {
+      if (!err) {
+        console.log("[MQTT] Subscribed to desktop/events")
+      } else {
+        console.error("[MQTT] Subscribe error:", err)
+      }
+    })
+  })
+
+  client.on('message', (topic, message) => {
+    const msg = message.toString()
+    console.log(`[MQTT] Event received on ${topic}: ${msg}`)
+
+    // Show desktop notification
+    new Notification({ title: "Server Event", body: msg }).show()
+
+    // Optionally, send to renderer (React/HTML UI)
+    if (mainWindow) {
+      mainWindow.webContents.send("mqtt-event", msg)
+    }
+  })
+
+  client.on('error', (err) => {
+    console.error("[MQTT] Error:", err)
+  })
+}
+
+
+// Config MQTT Section END !!! ----------------------------------------------------------------------------------------------------------------
 
 
 
@@ -772,6 +814,8 @@ app.whenReady().then(async () => {
     // });  
 
     // autoUpdater.checkForUpdates();
+
+  setupMQTT();
   
 
   // Creating Window
